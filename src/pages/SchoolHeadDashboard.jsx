@@ -162,6 +162,21 @@ export default function SchoolHeadDashboard() {
   const [showCsv, setShowCsv] = useState(false);
   const [showBroadcast, setShowBroadcast] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [premiumWarning, setPremiumWarning] = useState('');
+
+  // Check premium payment status
+  useEffect(() => {
+    if (!schoolId) return;
+    api.get('/api/exam-sessions/premium-status', { params: { school_id: schoolId } })
+      .then(r => {
+        if (r.data.blocked) {
+          setPremiumWarning('Premium payment required. Teachers cannot post exam results until the school pays for this term. Go to Premium Management to pay.');
+        } else {
+          setPremiumWarning('');
+        }
+      })
+      .catch(() => {});
+  }, [schoolId]);
 
   useEffect(() => {
     if (!teacherId || role !== 'head') navigate('/teacher/login', { replace: true });
@@ -200,16 +215,28 @@ export default function SchoolHeadDashboard() {
               <h1 className="text-base font-bold" style={{ color: '#333' }}>Teachers</h1>
               <p className="text-xs" style={{ color: '#888' }}>{teachers.length} records</p>
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setShowBroadcast(true)} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(255,179,0,0.12)', color: '#B8860B' }}>Broadcast</button>
-              <button onClick={() => navigate('/analytics')} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(123,79,155,0.08)', color: '#7B4F9B' }}>Analytics</button>
-              <button onClick={() => setShowCsv(true)} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(46,125,50,0.08)', color: '#2E7D32' }}>Import CSV</button>
-              <button onClick={() => setShowModal(true)} className="btn-secondary text-sm">+ New</button>
+            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+              <button onClick={() => navigate('/students')} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(123,79,155,0.08)', color: '#7B4F9B' }}>Students</button>
+              <button onClick={() => navigate('/classes')} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(123,79,155,0.08)', color: '#7B4F9B' }}>Classes</button>
+              <button onClick={() => navigate('/promotion')} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(255,179,0,0.12)', color: '#B8860B' }}>Promotion</button>
+              <button onClick={() => navigate('/premium')} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(46,125,50,0.08)', color: '#2E7D32' }}>Premium</button>
+              <button onClick={() => setShowBroadcast(true)} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(255,179,0,0.12)', color: '#B8860B' }}>Broadcast</button>
+              <button onClick={() => navigate('/analytics')} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(123,79,155,0.08)', color: '#7B4F9B' }}>Analytics</button>
+              <button onClick={() => setShowCsv(true)} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(46,125,50,0.08)', color: '#2E7D32' }}>CSV</button>
+              <button onClick={() => setShowModal(true)} className="btn-secondary text-sm">+ Teacher</button>
             </div>
           </div>
         </div>
 
-        <div className="max-w-3xl mx-auto px-4 py-5">
+          {premiumWarning && (
+            <div className="max-w-3xl mx-auto px-4 pt-4">
+              <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: '#FFEBEE', border: '1px solid #EF9A9A', color: '#C62828' }}>
+                <strong>⚠️ Premium Payment Due:</strong> {premiumWarning}
+              </div>
+            </div>
+          )}
+
+          <div className="max-w-3xl mx-auto px-4 py-5">
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#fff', borderTopColor: 'transparent' }} />

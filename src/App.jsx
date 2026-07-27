@@ -12,6 +12,11 @@ import HelpPage from './pages/HelpPage.jsx';
 import LessonPlansPage from './pages/LessonPlansPage.jsx';
 import ClassReportPage from './pages/ClassReportPage.jsx';
 import CompetencyRatingsPage from './pages/CompetencyRatingsPage.jsx';
+import CATManagementPage from './pages/CATManagementPage.jsx';
+import StudentListPage from './pages/StudentListPage.jsx';
+import PromotionPage from './pages/PromotionPage.jsx';
+import ClassManagementPage from './pages/ClassManagementPage.jsx';
+import PremiumManagementPage from './pages/PremiumManagementPage.jsx';
 import InstallPrompt from './components/InstallPrompt.jsx';
 import BottomNav from './components/BottomNav.jsx';
 
@@ -37,6 +42,11 @@ function AppLayout() {
         <Route path="/class-report/:classId" element={<ClassReportPage />} />
         <Route path="/class-report/:classId/:term" element={<ClassReportPage />} />
         <Route path="/competency-ratings" element={<CompetencyRatingsPage />} />
+        <Route path="/cat-management" element={<CATManagementPage />} />
+        <Route path="/students" element={<StudentListPage />} />
+        <Route path="/promotion" element={<PromotionPage />} />
+        <Route path="/classes" element={<ClassManagementPage />} />
+        <Route path="/premium" element={<PremiumManagementPage />} />
         <Route path="/help" element={<HelpPage />} />
       </Routes>
       {!hideNav && <BottomNav />}
