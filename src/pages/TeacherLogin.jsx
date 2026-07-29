@@ -21,7 +21,13 @@ export default function TeacherLogin() {
       try {
         const data = await searchSchools(schoolQuery);
         setSchoolResults(data.schools || []);
-      } catch { setSchoolResults([]); }
+        setError(''); // clear any previous error
+      } catch (err) { 
+        setSchoolResults([]);
+        const msg = err.response?.data?.error || err.message || 'Search failed';
+        setError(`Search error: ${msg}`);
+        console.error('[SCHOOL SEARCH]', err);
+      }
     }, 300);
     return () => clearTimeout(debounceRef.current);
   }, [schoolQuery]);

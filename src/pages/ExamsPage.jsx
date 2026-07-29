@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { fetchStudents } from '../utils/api.js';
 import { getLearningAreas, getExamSessions, getLearningAreasWithSubAreas, getExamSessionResults, saveExamResults } from '../utils/api.js';
-import { saveExamResultsOffline } from '../utils/indexedDB.js';
+import { saveExamResultsOffline, getUnsyncedExamResults, markExamResultsSynced } from '../utils/indexedDB.js';
 
 export default function ExamsPage() {
   const navigate = useNavigate();
@@ -23,6 +23,59 @@ export default function ExamsPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [premiumBlocked, setPremiumBlocked] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('');
+  const syncingRef = useRef(false);
+
+  // ─── Background Sync ──────────────────────────────────────────
+  const syncPendingExamResults = useCallback(async () => {
+    if (!navigator.onLine) return;
+    if (syncingRef.current) return; // prevent concurrent syncs
+    const pending = await getUnsyncedExamResults();
+    if (pending.length === 0) return;
+
+    syncingRef.current = true;
+    setSyncStatus(`Syncing ${pending.length} offline result(s)...`);
+
+    // Group by session_id
+    const bySession = {};
+    pending.forEach(r => {
+      if (!bySession[r.session_id]) bySession[r.session_id] = [];
+      bySession[r.session_id].push(r);
+    });
+
+    const syncedIds = [];
+    let failCount = 0;
+    for (const [sid, results] of Object.entries(bySession)) {
+      try {
+        await saveExamResults(sid, results, teacherId);
+        results.forEach(r => { if (r.id != null) syncedIds.push(r.id); });
+      } catch (e) {
+        failCount++;
+        console.error('[SYNC] Failed to sync session', sid, e.message);
+      }
+    }
+
+    if (syncedIds.length > 0) await markExamResultsSynced(syncedIds);
+
+    syncingRef.current = false;
+    if (failCount === 0) {
+      setSyncStatus(`✓ Synced ${syncedIds.length} result(s)`);
+    } else {
+      setSyncStatus(`Synced ${syncedIds.length}, failed ${failCount} session(s) — will retry`);
+    }
+    setTimeout(() => setSyncStatus(''), 4000);
+  }, [teacherId]);
+
+  // Run sync on mount, every 5 minutes, and when connectivity returns
+  useEffect(() => {
+    syncPendingExamResults();
+    const timer = setInterval(syncPendingExamResults, 5 * 60 * 1000);
+    window.addEventListener('online', syncPendingExamResults);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('online', syncPendingExamResults);
+    };
+  }, [syncPendingExamResults]);
 
   useEffect(() => {
     if (!schoolId) return;
@@ -159,7 +212,9 @@ export default function ExamsPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate('/home')} className="btn-ghost text-sm">← Back</button>
           <h1 className="text-base font-bold" style={{ color: '#333' }}>CAT Exams</h1>
-          <div />
+          <div className="text-xs" style={{ color: syncStatus.startsWith('✓') ? '#2E7D32' : '#888' }}>
+            {syncStatus || (!navigator.onLine ? '● Offline' : '')}
+          </div>
         </div>
       </div>
 
