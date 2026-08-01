@@ -45,7 +45,8 @@ export default function TeacherLogin() {
     setLoading(true);
     setError('');
     try {
-      const data = await requestTeacherOtp(phone);
+      const isEmail = phone.includes('@');
+      const data = await requestTeacherOtp(isEmail ? undefined : phone, isEmail ? phone : undefined);
       setSessionId(data.session_id);
       setStep('otp');
     } catch (err) {
@@ -164,8 +165,16 @@ export default function TeacherLogin() {
                 School: <span className="font-semibold" style={{ color: '#7B4F9B' }}>{selectedSchool.school_name}</span>
                 <button type="button" onClick={() => { setStep('school'); setSelectedSchool(null); setSchoolQuery(''); }} className="ml-2 text-xs" style={{ color: '#aaa' }}>Change</button>
               </p>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: '#555' }}>Phone Number</label>
-              <input type="tel" placeholder="e.g. 254712345678" value={phone} onChange={(e) => setPhone(e.target.value)} className="input-field mb-4" required />
+              <label className="block text-sm font-medium mb-1.5" style={{ color: '#555' }}>Phone or Email</label>
+              <input
+                type="text"
+                placeholder="254712345678 or you@email.com"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="input-field mb-4"
+                autoComplete="email tel"
+                required
+              />
               <button type="submit" disabled={loading} className="btn-primary">
                 {loading ? 'Sending...' : 'Continue with OTP'}
               </button>
