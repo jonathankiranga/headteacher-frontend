@@ -1,56 +1,28 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import OTPInput from '../components/OTPInput.jsx';
-import { requestTeacherOtp, verifyTeacherOtp, searchSchools } from '../utils/api.js';
+import { requestTeacherOtp, verifyTeacherOtp } from '../utils/api.js';
 
 export default function TeacherLogin() {
-  const [step, setStep] = useState('school');
-  const [schoolQuery, setSchoolQuery] = useState('');
-  const [schoolResults, setSchoolResults] = useState([]);
-  const [selectedSchool, setSelectedSchool] = useState(null);
-  const [phone, setPhone] = useState('');
+  const [step, setStep] = useState('credential'); // credential → otp
+  const [credential, setCredential] = useState(''); // phone or email
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sessionId, setSessionId] = useState('');
-  const schoolRef = useRef(null);
-  const debounceRef = useRef(null);
-
-  useEffect(() => {
-    if (schoolQuery.length < 2) { setSchoolResults([]); return; }
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const data = await searchSchools(schoolQuery);
-        setSchoolResults(data.schools || []);
-        setError(''); // clear any previous error
-      } catch (err) { 
-        setSchoolResults([]);
-        const msg = err.response?.data?.error || err.message || 'Search failed';
-        setError(`Search error: ${msg}`);
-        console.error('[SCHOOL SEARCH]', err);
-      }
-    }, 300);
-    return () => clearTimeout(debounceRef.current);
-  }, [schoolQuery]);
-
-  useEffect(() => {
-    function handleClick(e) {
-      if (schoolRef.current && !schoolRef.current.contains(e.target)) setSchoolResults([]);
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
 
   async function handleRequestOtp(e) {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
-      const isEmail = phone.includes('@');
-      const data = await requestTeacherOtp(isEmail ? undefined : phone, isEmail ? phone : undefined);
+      const isEmail = credential.includes('@');
+      const data = await requestTeacherOtp(
+        isEmail ? undefined : credential,
+        isEmail ? credential : undefined
+      );
       setSessionId(data.session_id);
       setStep('otp');
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to send OTP');
+      setError(err.response?.data?.error || 'Failed to send OTP. Check your phone or email.');
     }
     setLoading(false);
   }
@@ -65,16 +37,9 @@ export default function TeacherLogin() {
       sessionStorage.setItem('role', data.role || 'teacher');
       window.location.hash = '#/home';
     } catch (err) {
-      setError(err.response?.data?.error || 'Invalid code');
+      setError(err.response?.data?.error || 'Invalid or expired code');
     }
     setLoading(false);
-  }
-
-  function selectSchool(school) {
-    setSelectedSchool(school);
-    setSchoolQuery(school.school_name);
-    setSchoolResults([]);
-    setStep('phone');
   }
 
   return (
@@ -89,13 +54,10 @@ export default function TeacherLogin() {
       justifyContent: 'center',
       padding: '0 24px'
     }}>
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: 'rgba(0,0,0,0.55)',
-        zIndex: 0
-      }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 0 }} />
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 400 }}>
+        {/* Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl mb-4" style={{ backgroundColor: '#7B4F9B' }}>
             <span className="text-2xl font-bold text-white">E</span>
@@ -103,90 +65,64 @@ export default function TeacherLogin() {
           <h1 className="text-2xl font-bold text-white">Education APP</h1>
           <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.7)' }}>Powered by Smarternow Data Venture</p>
         </div>
+
+        {/* Feature highlights */}
         <div className="mb-5 px-1 space-y-3 text-center">
           <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.95)' }}>
             Free digital tools for Kenyan teachers. Track attendance, record CBC assessments, and generate report cards — offline first.
           </p>
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
-              <span style={{ color: '#81C784' }}>✓</span>
-              <span style={{ color: 'rgba(255,255,255,0.85)' }}>Offline attendance</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
-              <span style={{ color: '#81C784' }}>✓</span>
-              <span style={{ color: 'rgba(255,255,255,0.85)' }}>CBC assessments</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
-              <span style={{ color: '#81C784' }}>✓</span>
-              <span style={{ color: 'rgba(255,255,255,0.85)' }}>Report cards</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
-              <span style={{ color: '#81C784' }}>✓</span>
-              <span style={{ color: 'rgba(255,255,255,0.85)' }}>Free for schools</span>
-            </div>
+            {['Offline attendance', 'CBC assessments', 'Report cards', 'Free for schools'].map(f => (
+              <div key={f} className="flex items-center gap-1.5 px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
+                <span style={{ color: '#81C784' }}>✓</span>
+                <span style={{ color: 'rgba(255,255,255,0.85)' }}>{f}</span>
+              </div>
+            ))}
           </div>
         </div>
 
+        {/* Login card */}
         <div className="bg-white rounded-card p-6 shadow-xl">
-          {step === 'school' && (
-            <div ref={schoolRef}>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: '#555' }}>Search your school</label>
-              <input
-                type="text"
-                placeholder="Type school name..."
-                value={schoolQuery}
-                onChange={(e) => setSchoolQuery(e.target.value)}
-                className="input-field"
-                autoFocus
-              />
-              {schoolResults.length > 0 && (
-                <div className="mt-2 rounded-lg overflow-hidden" style={{ border: '1px solid #E8E8E8', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                  {schoolResults.map(s => (
-                    <button key={s.school_id} onClick={() => selectSchool(s)}
-                      className="w-full px-4 py-3 text-left text-sm transition-colors"
-                      style={{ borderBottom: '1px solid #F0F0F0' }}
-                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F8F8F8'}
-                      onMouseLeave={e => e.currentTarget.style.backgroundColor = ''}>
-                      <span style={{ color: '#333' }}>{s.school_name}</span>
-                      {s.region && <span className="text-xs ml-2" style={{ color: '#aaa' }}>{s.region}</span>}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {schoolQuery.length >= 2 && schoolResults.length === 0 && (
-                <p className="text-xs mt-2" style={{ color: '#888' }}>No schools found</p>
-              )}
-            </div>
-          )}
-
-          {step === 'phone' && selectedSchool && (
+          {step === 'credential' && (
             <form onSubmit={handleRequestOtp}>
-              <p className="text-xs mb-3" style={{ color: '#888' }}>
-                School: <span className="font-semibold" style={{ color: '#7B4F9B' }}>{selectedSchool.school_name}</span>
-                <button type="button" onClick={() => { setStep('school'); setSelectedSchool(null); setSchoolQuery(''); }} className="ml-2 text-xs" style={{ color: '#aaa' }}>Change</button>
-              </p>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: '#555' }}>Phone or Email</label>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: '#555' }}>
+                Phone or Email
+              </label>
               <input
                 type="text"
                 placeholder="254712345678 or you@email.com"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                value={credential}
+                onChange={e => setCredential(e.target.value)}
                 className="input-field mb-4"
+                autoFocus
                 autoComplete="email tel"
                 required
               />
               <button type="submit" disabled={loading} className="btn-primary">
-                {loading ? 'Sending...' : 'Continue with OTP'}
+                {loading ? 'Sending OTP...' : 'Continue'}
               </button>
+              <p className="text-xs text-center mt-3" style={{ color: '#aaa' }}>
+                Your school is linked to your account automatically
+              </p>
             </form>
           )}
 
           {step === 'otp' && (
             <div>
-              <p className="text-sm mb-1 text-center" style={{ color: '#666' }}>Enter the code sent to</p>
-              <p className="text-base font-semibold mb-5 text-center" style={{ color: '#7B4F9B' }}>{phone}</p>
+              <p className="text-sm mb-1 text-center" style={{ color: '#666' }}>
+                Enter the code sent to
+              </p>
+              <p className="text-base font-semibold mb-5 text-center" style={{ color: '#7B4F9B' }}>
+                {credential}
+              </p>
               <OTPInput onComplete={handleVerify} />
-              <button onClick={() => { setStep('phone'); setError(''); }} className="w-full mt-3 text-center text-sm" style={{ color: '#888' }}>← Change number</button>
+              <button
+                onClick={() => { setStep('credential'); setError(''); }}
+                className="w-full mt-3 text-center text-sm"
+                style={{ color: '#888' }}
+              >
+                ← Use a different phone or email
+              </button>
             </div>
           )}
         </div>
@@ -196,7 +132,6 @@ export default function TeacherLogin() {
             {error}
           </div>
         )}
-
       </div>
     </div>
   );
