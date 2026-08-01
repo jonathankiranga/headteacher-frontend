@@ -8,10 +8,16 @@ export default function StudentCard({ student, date, teacherId, initialStatus, o
   function handleTap(value) {
     const newStatus = status === value ? null : value;
     setStatus(newStatus);
+    const markedAt = new Date().toISOString(); // capture exact local time of tap
 
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(async () => {
-      await saveAttendance(date, [{ student_id: student.student_id, status: newStatus || 'Absent', teacher_id: teacherId }]);
+      await saveAttendance(date, [{
+        student_id: student.student_id,
+        status: newStatus || 'Absent',
+        teacher_id: teacherId,
+        marked_at: markedAt   // stored with the record
+      }]);
       if (onStatusChange) onStatusChange(student.student_id, newStatus || 'Absent');
     }, 300);
   }

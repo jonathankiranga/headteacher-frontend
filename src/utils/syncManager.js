@@ -14,7 +14,8 @@ export async function pushUnsynced() {
         student_id: l.student_id,
         date: l.date,
         status: l.status,
-        teacher_id: l.teacher_id
+        teacher_id: l.teacher_id,
+        marked_at: l.marked_at || null
       }));
       await syncAttendance(payload);
       await markSynced(logs.map(l => l.id));
