@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Dropdown from '../components/Dropdown.jsx';
 import api from '../utils/api.js';
 
 export default function FeesPage() {
@@ -111,7 +110,17 @@ export default function FeesPage() {
           <div className="card p-5">
             <h2 className="text-sm font-bold mb-4" style={{ color: '#333' }}>Assign Fee to Class</h2>
             <form onSubmit={handleAssign} className="space-y-3">
-              <Dropdown label="Assign to Class" options={classes} value={assignClass} onChange={setAssignClass} placeholder="Select class (optional)" />
+              <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Class</label>
+              <select
+                value={assignClass}
+                onChange={e => setAssignClass(e.target.value)}
+                className="input-field w-full"
+              >
+                <option value="">Select class (optional)</option>
+                {classes.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
               <button type="submit" className="btn-primary">Assign</button>
             </form>
           </div>
