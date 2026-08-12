@@ -1,8 +1,18 @@
 import { precacheAndRoute } from 'workbox-precaching';
 
-precacheAndRoute(self.__WB_MANIFEST);
+precacheAndRoute(self.__WB_MANIFEST || []);
 
 const SW = self;
+
+SW.addEventListener('sync', event => {
+  if (event.tag === 'sync-offline-data') {
+    event.waitUntil(
+      SW.clients.matchAll({ type: 'window' }).then(clients => {
+        clients.forEach(client => client.postMessage({ type: 'SYNC_OFFLINE_DATA' }));
+      })
+    );
+  }
+});
 
 SW.addEventListener('push', event => {
   const data = event.data?.json() || {};
