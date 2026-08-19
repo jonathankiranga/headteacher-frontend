@@ -47,6 +47,8 @@ function BroadcastModal({ schoolId, onClose }) {
 function AddTeacherModal({ schoolId, onClose, onAdded }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [newRole, setNewRole] = useState('teacher');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -55,7 +57,7 @@ function AddTeacherModal({ schoolId, onClose, onAdded }) {
     setLoading(true);
     setError('');
     try {
-      await addTeacher(schoolId, { full_name: name, phone });
+      await addTeacher(schoolId, { full_name: name, phone, email, role: newRole });
       onAdded(); onClose();
     } catch (err) { setError(err.response?.data?.error || 'Failed'); }
     setLoading(false);
@@ -64,15 +66,29 @@ function AddTeacherModal({ schoolId, onClose, onAdded }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
       <div className="bg-white rounded-card shadow-xl p-6 w-full max-w-sm">
-        <h2 className="text-lg font-bold mb-4" style={{ color: '#333' }}>New Teacher</h2>
+        <h2 className="text-lg font-bold mb-4" style={{ color: '#333' }}>New Staff</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Full Name</label>
             <input value={name} onChange={e => setName(e.target.value)} className="input-field" placeholder="Jane Mwangi" required />
           </div>
-          <div className="mb-4">
+          <div className="mb-3">
             <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Phone Number</label>
             <input value={phone} onChange={e => setPhone(e.target.value)} className="input-field" placeholder="254712345678" required />
+          </div>
+          <div className="mb-3">
+            <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Email (for login)</label>
+            <input value={email} onChange={e => setEmail(e.target.value)} type="email" className="input-field" placeholder="jane@school.co.ke" />
+          </div>
+          <div className="mb-4">
+            <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Role</label>
+            <select value={newRole} onChange={e => setNewRole(e.target.value)} className="input-field">
+              <option value="teacher">Teacher</option>
+              <option value="bursar">Bursar</option>
+            </select>
+            {newRole === 'bursar' && (
+              <p className="text-xs mt-1" style={{ color: '#7B4F9B' }}>Bursar signs into Bazar Pay to manage school fees.</p>
+            )}
           </div>
           {error && <p className="text-xs mb-3" style={{ color: '#C62828' }}>{error}</p>}
           <div className="flex gap-3">
@@ -136,7 +152,7 @@ function ImportCsvModal({ schoolId, onClose, onAdded }) {
         </div>
         <div className="mb-3">
           <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>CSV File</label>
-          <p className="text-xs mb-1" style={{ color: '#888' }}>File format: one <code>student_id,full_name</code> per line</p>
+          <p className="text-xs mb-1" style={{ color: '#888' }}>Format per line: <code>student_id,full_name</code> — optionally add <code>,parent_phone,parent_name</code> to link a parent.</p>
           <input type="file" accept=".csv" onChange={handleFileSelect}
             className="input-field" style={{ padding: '8px 12px', fontSize: 13 }} />
           {fileName && <p className="text-xs mt-1" style={{ color: '#2E7D32' }}>Selected: {fileName}</p>}
@@ -263,7 +279,7 @@ export default function SchoolHeadDashboard() {
                       onMouseLeave={e => e.currentTarget.style.backgroundColor = ''}>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: t.role === 'head' ? '#5C3D76' : '#9B6FB8' }}>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: t.role === 'head' ? '#5C3D76' : t.role === 'bursar' ? '#B8860B' : '#9B6FB8' }}>
                             {t.full_name ? t.full_name.charAt(0).toUpperCase() : '?'}
                           </div>
                           <span className="text-sm font-medium" style={{ color: '#333' }}>{t.full_name}</span>
@@ -271,7 +287,7 @@ export default function SchoolHeadDashboard() {
                       </td>
                       <td className="px-4 py-3.5 text-sm hidden sm:table-cell" style={{ color: '#666' }}>{t.phone}</td>
                       <td className="px-4 py-3.5 hidden sm:table-cell">
-                        {t.role === 'head' ? <span className="badge-premium">Head</span> : <span className="text-sm" style={{ color: '#888' }}>Teacher</span>}
+                        {t.role === 'head' ? <span className="badge-premium">Head</span> : t.role === 'bursar' ? <span className="badge-premium">Bursar</span> : <span className="text-sm" style={{ color: '#888' }}>Teacher</span>}
                       </td>
                       <td className="px-4 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-2">
