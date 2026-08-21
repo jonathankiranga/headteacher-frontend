@@ -6,6 +6,7 @@ export default function InstallPrompt() {
 
   useEffect(() => {
     const handler = (e) => {
+      // Only preventDefault if we'll show custom UI
       e.preventDefault();
       setDeferredPrompt(e);
       setShow(true);
@@ -16,20 +17,28 @@ export default function InstallPrompt() {
 
   async function handleInstall() {
     if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const result = await deferredPrompt.userChoice;
-    if (result.outcome === 'accepted') setShow(false);
+    try {
+      await deferredPrompt.prompt();
+      const result = await deferredPrompt.userChoice;
+      if (result.outcome === 'accepted') setShow(false);
+    } finally {
+      setDeferredPrompt(null);
+    }
+  }
+
+  function handleDismiss() {
+    setShow(false);
     setDeferredPrompt(null);
   }
 
-  if (!show) return null;
+  if (!show || !deferredPrompt) return null;
 
   return (
     <div className="fixed bottom-4 left-4 right-4 max-w-sm mx-auto bg-white p-4 rounded-xl shadow-lg border border-gray-200 z-50">
       <p className="text-sm mb-2">Install Education APP for offline access</p>
       <div className="flex gap-3">
         <button onClick={handleInstall} className="bg-school text-white px-4 py-2 rounded-lg text-sm flex-1">Install</button>
-        <button onClick={() => setShow(false)} className="text-gray-500 px-4 py-2 rounded-lg text-sm">Not now</button>
+        <button onClick={handleDismiss} className="text-gray-500 px-4 py-2 rounded-lg text-sm">Not now</button>
       </div>
     </div>
   );
