@@ -17,7 +17,6 @@ import StudentListPage from './pages/StudentListPage.jsx';
 import PromotionPage from './pages/PromotionPage.jsx';
 import ClassManagementPage from './pages/ClassManagementPage.jsx';
 import PremiumManagementPage from './pages/PremiumManagementPage.jsx';
-import InstallPrompt from './components/InstallPrompt.jsx';
 import BottomNav from './components/BottomNav.jsx';
 
 function AppLayout() {
@@ -25,7 +24,6 @@ function AppLayout() {
   const hideNav = location.pathname === '/' || location.pathname.includes('/login');
   return (
     <>
-      <InstallPrompt />
       <Routes>
         <Route path="/" element={<Navigate to="/teacher/login" replace />} />
         <Route path="/teacher/login" element={<TeacherLogin />} />
