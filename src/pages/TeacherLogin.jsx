@@ -22,7 +22,16 @@ export default function TeacherLogin() {
       setSessionId(data.session_id);
       setStep('otp');
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to send OTP. Check your email or phone.');
+      console.error('OTP request failed:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message
+      });
+      const errorMsg = err.response?.data?.error || 
+        (err.response?.status === 404 ? 'Teacher not found' : 
+         err.response?.status === 400 ? 'Invalid email format' :
+         err.message || 'Failed to send OTP. Check your email or phone.');
+      setError(errorMsg);
     }
     setLoading(false);
   }
