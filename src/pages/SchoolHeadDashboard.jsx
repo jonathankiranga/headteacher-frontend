@@ -110,7 +110,6 @@ function ImportCsvModal({ schoolId, onClose, onAdded }) {
   const [result, setResult] = useState('');
 
   useEffect(() => {
-    api.get(`/api/school-head?school_id=${schoolId}/classes`).catch(() => {});
     api.get(`/api/fees/classes?school_id=${schoolId}`).then(r => setClasses(r.data.classes || [])).catch(() => {});
   }, [schoolId]);
 

@@ -217,17 +217,18 @@ export default function StudentListPage() {
 
   useEffect(() => {
     if (!schoolId) return;
-    Promise.all([
-      api.get(`/api/school-head/${schoolId}/classes`),
-      api.get(`/api/school-head/${schoolId}/students`)
-    ]).then(([c, s]) => {
-      setClasses(c.data.classes || []);
-      setStudents(s.data.students || []);
-    }).catch(() => {}).finally(() => setLoading(false));
+    api.get(`/api/fees/classes?school_id=${schoolId}`)
+      .then(c => setClasses(c.data.classes || []))
+      .catch(() => {});
+    loadStudents();
   }, [schoolId]);
 
   function loadStudents() {
-    params => api.get(`/api/school-head/${schoolId}/students`, { params }).then(s => setStudents(s.data.students || [])).catch(() => {});
+    setLoading(true);
+    api.get(`/api/school-head/${schoolId}/students`)
+      .then(s => setStudents(s.data.students || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }
 
   const filtered = students.filter(s => {
