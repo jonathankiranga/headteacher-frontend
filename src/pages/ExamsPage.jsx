@@ -93,7 +93,7 @@ export default function ExamsPage() {
     // Load all classes for this school
     if (schoolId) {
       getClasses(schoolId).then(d => {
-        setClasses((d.data.classes || []).map(c => ({ value: c.class_id, label: c.class_name })));
+        setClasses((d.classes || []).map(c => ({ value: c.class_id, label: c.class_name })));
       }).catch(() => {});
     }
     // Load students for the class (still uses fetchStudents)

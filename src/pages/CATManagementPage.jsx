@@ -34,7 +34,7 @@ export default function CATManagementPage() {
   useEffect(() => {
     if (!schoolId) return;
     getClasses(schoolId).then(d => {
-      setClasses((d.data.classes || []).map(c => ({ value: c.class_id, label: c.class_name })));
+      setClasses((d.classes || []).map(c => ({ value: c.class_id, label: c.class_name })));
     }).catch(() => {});
   }, [schoolId]);
 
