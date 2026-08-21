@@ -9,6 +9,7 @@ export default function ClassManagementPage() {
   const [streams, setStreams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showClassForm, setShowClassForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [showStreamForm, setShowStreamForm] = useState(false);
   const [editClass, setEditClass] = useState(null);
   const [newStreamName, setNewStreamName] = useState('');
@@ -44,11 +45,17 @@ export default function ClassManagementPage() {
     } catch (err) { alert(err.response?.data?.error || 'Failed'); }
   }
 
-  async function handleEditClass(cls) {
-    const name = prompt('Class name:', cls.class_name);
-    if (!name) return;
+  async function handleUpdateClass(e) {
+    e.preventDefault();
+    const fd = new FormData(e.target);
     try {
-      await api.put(`/api/school-head/${schoolId}/classes/${cls.class_id}`, { class_name: name });
+      await api.put(`/api/school-head/${schoolId}/classes/${editClass.class_id}`, {
+        level_name: fd.get('level_name'),
+        stream: fd.get('stream') || null,
+        academic_year: fd.get('academic_year')
+      });
+      setShowEditForm(false);
+      setEditClass(null);
       loadData();
     } catch (err) { alert(err.response?.data?.error || 'Failed'); }
   }
@@ -150,13 +157,51 @@ export default function ClassManagementPage() {
                       <td className="px-3 py-2.5 text-sm" style={{ color: '#666' }}>{c.stream || '-'}</td>
                       <td className="px-3 py-2.5 text-sm" style={{ color: '#666' }}>{c.academic_year}</td>
                       <td className="px-3 py-2.5 text-right">
-                        <button onClick={() => handleEditClass(c)} className="text-xs px-2 py-1 rounded"
+                        <button onClick={() => { setEditClass(c); setShowEditForm(true); }} className="text-xs px-2 py-1 rounded"
                           style={{ backgroundColor: 'rgba(123,79,155,0.08)', color: '#7B4F9B' }}>Edit</button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Edit Class Form Modal */}
+          {showEditForm && editClass && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
+              <div className="bg-white rounded-card shadow-xl p-6 w-full max-w-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-bold" style={{ color: '#333' }}>Edit Class</h3>
+                  <button onClick={() => { setShowEditForm(false); setEditClass(null); }} className="text-sm" style={{ color: '#888' }}>✕</button>
+                </div>
+                <p className="text-xs mb-4" style={{ color: '#888' }}>Current: {editClass.class_name}</p>
+                <form onSubmit={handleUpdateClass} className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Grade Level</label>
+                    <select name="level_name" className="input-field" defaultValue={editClass.level_name || ''} required>
+                      <option value="">— Select —</option>
+                      {levels.map(l => <option key={l} value={l}>{l}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Stream</label>
+                    <select name="stream" className="input-field" defaultValue={editClass.stream || ''}>
+                      <option value="">— No stream —</option>
+                      {streams.map(s => <option key={s.stream_id} value={s.stream_name}>{s.stream_name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Academic Year</label>
+                    <input name="academic_year" className="input-field" defaultValue={editClass.academic_year} required />
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={() => { setShowEditForm(false); setEditClass(null); }}
+                      className="flex-1 py-3 rounded-lg text-sm font-medium" style={{ backgroundColor: '#F5F5F5', color: '#666' }}>Cancel</button>
+                    <button type="submit" className="flex-1 py-3 rounded-lg text-sm font-medium text-white" style={{ backgroundColor: '#7B4F9B' }}>Save</button>
+                  </div>
+                </form>
+              </div>
             </div>
           )}
 
