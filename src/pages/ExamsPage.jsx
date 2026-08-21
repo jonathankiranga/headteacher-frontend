@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api, { fetchStudents } from '../utils/api.js';
+import api, { fetchStudents, getClasses } from '../utils/api.js';
 import { getLearningAreas, getExamSessions, getLearningAreasWithSubAreas, getExamSessionResults, saveExamResults } from '../utils/api.js';
 import { saveExamResultsOffline, getUnsyncedExamResults, markExamResultsSynced } from '../utils/indexedDB.js';
 
@@ -90,14 +90,17 @@ export default function ExamsPage() {
   // Load classes
   useEffect(() => {
     if (!teacherId) { navigate('/teacher/login', { replace: true }); return; }
+    // Load all classes for this school
+    if (schoolId) {
+      getClasses(schoolId).then(d => {
+        setClasses((d.data.classes || []).map(c => ({ value: c.class_id, label: c.class_name })));
+      }).catch(() => {});
+    }
+    // Load students for the class (still uses fetchStudents)
     fetchStudents(teacherId).then(data => {
-      const list = data.students || [];
-      const classMap = {};
-      list.forEach(s => { if (s.class_id) classMap[s.class_id] = s.class_name || 'Class'; });
-      setClasses(Object.entries(classMap).map(([id, name]) => ({ value: id, label: name })));
-      setStudents(list);
+      setStudents(data.students || []);
     }).catch(() => {});
-  }, [teacherId, navigate]);
+  }, [teacherId, schoolId, navigate]);
 
   // Load sessions when class/term/year changes
   useEffect(() => {
