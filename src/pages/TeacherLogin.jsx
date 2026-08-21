@@ -14,7 +14,11 @@ export default function TeacherLogin() {
     setLoading(true);
     setError('');
     try {
-      const data = await requestTeacherOtp(credential);
+      const isEmail = credential.includes('@');
+      const data = await requestTeacherOtp(
+        isEmail ? undefined : credential,
+        isEmail ? credential : undefined
+      );
       setSessionId(data.session_id);
       setStep('otp');
     } catch (err) {

@@ -7,8 +7,8 @@ const api = axios.create({
 });
 
 // Auth
-export async function requestTeacherOtp(email) {
-  const { data } = await api.post('/api/teachers/request-otp', { email });
+export async function requestTeacherOtp(phone, email) {
+  const { data } = await api.post('/api/teachers/request-otp', { phone, email });
   return data;
 }
 
