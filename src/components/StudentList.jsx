@@ -4,7 +4,7 @@ import { getRoster, saveRoster, getAttendanceByDate } from '../utils/indexedDB.j
 import { fetchStudents } from '../utils/api.js';
 import { downloadCSV } from '../utils/csvExport.js';
 
-export default function StudentList({ teacherId, date }) {
+export default function StudentList({ teacherId, date, classId }) {
   const [students, setStudents] = useState([]);
   const [statusMap, setStatusMap] = useState({});
   const [loading, setLoading] = useState(true);
@@ -20,6 +20,10 @@ export default function StudentList({ teacherId, date }) {
         roster = data.students || data;
         if (roster.length) await saveRoster(roster);
       }
+      // Filter by class if classId provided
+      if (classId) {
+        roster = roster.filter(s => String(s.class_id) === String(classId));
+      }
       const existing = await getAttendanceByDate(date, teacherId);
       const map = {};
       existing.forEach(r => { map[r.student_id] = r.status; });
@@ -29,7 +33,7 @@ export default function StudentList({ teacherId, date }) {
       setError('Failed to load students');
     }
     setLoading(false);
-  }, [teacherId, date]);
+  }, [teacherId, date, classId]);
 
   useEffect(() => { loadRoster(); }, [loadRoster]);
 
