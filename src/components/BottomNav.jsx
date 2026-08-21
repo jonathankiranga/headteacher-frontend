@@ -4,9 +4,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 const tabs = [
   { id: 'home', label: 'Home', icon: '🏠', route: '/home' },
   { id: 'attendance', label: 'Attendance', icon: '📋', route: '/teacher/attendance' },
+  { id: 'teachers', label: 'Teachers', icon: '👨‍🏫', route: '/school-head' },
+  { id: 'fees', label: 'Fees', icon: '💰', route: '/fees' },
+  { id: 'classes', label: 'Classes', icon: '🏫', route: '/classes' },
   { id: 'exams', label: 'Assessments', icon: '📝', route: '/exams' },
   { id: 'reports', label: 'Reports', icon: '📊', route: '/class-report' },
-  { id: 'more', label: 'More', icon: '☰', route: '/home' },
 ];
 
 export default function BottomNav() {
@@ -17,9 +19,11 @@ export default function BottomNav() {
     const path = location.pathname;
     if (tab.id === 'home') return path === '/home';
     if (tab.id === 'attendance') return path.includes('/attendance');
-    if (tab.id === 'exams') return path.includes('/exams') || path.includes('/school-head');
+    if (tab.id === 'teachers') return path.includes('/school-head');
+    if (tab.id === 'fees') return path.includes('/fees');
+    if (tab.id === 'classes') return path.includes('/classes');
+    if (tab.id === 'exams') return path.includes('/exams') || path.includes('/cat');
     if (tab.id === 'reports') return path.includes('/class-report') || path.includes('/competency');
-    if (tab.id === 'more') return path === '/home' && !path.includes('/attendance') && !path.includes('/exams') && !path.includes('/class-report') && !path.includes('/competency');
     return false;
   }
 
