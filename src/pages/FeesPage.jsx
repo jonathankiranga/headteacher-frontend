@@ -136,6 +136,7 @@ export default function FeesPage() {
               <thead>
                 <tr style={{ backgroundColor: '#FAFAFA' }}>
                   <th className="text-left px-4 py-3 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Fee Name</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase hidden sm:table-cell" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Applies To</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Amount</th>
                   <th className="text-center px-4 py-3 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Term</th>
                   <th className="text-center px-4 py-3 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Year</th>
@@ -147,6 +148,11 @@ export default function FeesPage() {
                 {fees.map((f, i) => (
                   <tr key={f.fee_id} style={{ borderBottom: i < fees.length-1 ? '1px solid #F0F0F0' : 'none' }}>
                     <td className="px-4 py-3 text-sm font-medium" style={{ color: '#333' }}>{f.fee_name}</td>
+                    <td className="px-4 py-3 text-sm hidden sm:table-cell" style={{ color: '#666' }}>
+                      {f.assigned_classes
+                        ? f.assigned_classes
+                        : f.assigned_count > 0 ? 'Specific students' : 'All classes'}
+                    </td>
                     <td className="px-4 py-3 text-sm text-right" style={{ color: '#333' }}>KSh {parseFloat(f.amount).toLocaleString()}</td>
                     <td className="px-4 py-3 text-sm text-center" style={{ color: '#666' }}>{f.term}</td>
                     <td className="px-4 py-3 text-sm text-center" style={{ color: '#666' }}>{f.academic_year}</td>
