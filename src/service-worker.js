@@ -2,6 +2,9 @@ import { precacheAndRoute } from 'workbox-precaching';
 
 precacheAndRoute(self.__WB_MANIFEST || []);
 
+self.skipWaiting();
+clientsClaim();
+
 const SW = self;
 
 SW.addEventListener('sync', event => {
