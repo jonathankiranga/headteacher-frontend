@@ -157,8 +157,8 @@ export async function deleteLessonPlan(id) {
 }
 
 // Class Report
-export async function getClassReport(classId, term) {
-  const { data } = await api.get(`/api/assessments/class-report/${classId}/${term}`);
+export async function getClassReport(classId, term, year) {
+const { data } = await api.get(`/api/assessments/class-report/${classId}/${term}`, { params: year ? { year } : {} });
   return data;
 }
 

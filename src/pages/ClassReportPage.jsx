@@ -45,6 +45,7 @@ export default function ClassReportPage() {
   const [classes, setClasses] = useState([]);
   const [classId, setClassId] = useState(paramClassId || '');
   const [term, setTerm] = useState(paramTerm || 'Term 1');
+  const [year, setYear] = useState(new Date().getFullYear());
   const [report, setReport] = useState(null);
   const [competencyDefs, setCompetencyDefs] = useState({ competencies: [], values: [] });
   const [loading, setLoading] = useState(false);
@@ -75,12 +76,12 @@ export default function ClassReportPage() {
       setEditCompetencies(false);
       setEditValues(false);
       setEditingRatings({});
-      getClassReport(classId, term).then(data => {
+      getClassReport(classId, term, year).then(data => {
         setReport(data);
         setLoading(false);
       }).catch(() => setLoading(false));
     }
-  }, [classId, term]);
+  }, [classId, term, year]);
 
   function getStudentLevel(avgPct) {
     if (avgPct === null || avgPct === undefined) return null;
@@ -116,7 +117,7 @@ export default function ClassReportPage() {
     setSaving(true);
     try {
       await saveCompetencyRatings(ratings);
-      const updated = await getClassReport(classId, term);
+      const updated = await getClassReport(classId, term, year);
       setReport(updated);
       if (category === 'competency') setEditCompetencies(false);
       else setEditValues(false);
@@ -237,7 +238,7 @@ export default function ClassReportPage() {
       doc.setFont('helvetica', 'normal');
       doc.text(`Class: ${cls.class_name}`, 14, y);
       y += 6;
-      doc.text(`Term: ${term}`, 14, y);
+        doc.text(`Term: ${term} · ${year}`, 14, y);
       y += 6;
       doc.text(`Total Students: ${aggregates.total_students || 0}`, 14, y);
       y += 10;
@@ -410,7 +411,7 @@ export default function ClassReportPage() {
         y += 8;
       });
 
-      doc.save(`class-report-${cls.class_name}-${term}.pdf`);
+        doc.save(`class-report-${cls.class_name}-${term}-${year}.pdf`);
     } catch (e) { console.error('PDF export error:', e); }
     setExporting(false);
   }
@@ -430,7 +431,7 @@ export default function ClassReportPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-5">
-        <div className="grid grid-cols-2 gap-3 mb-4 max-w-md">
+        <div className="grid grid-cols-3 gap-3 mb-4 max-w-lg">
           <select value={classId} onChange={e => setClassId(e.target.value)} className="input-field">
             <option value="">— Select Class —</option>
             {classes.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -439,6 +440,9 @@ export default function ClassReportPage() {
             <option value="Term 1">Term 1</option>
             <option value="Term 2">Term 2</option>
             <option value="Term 3">Term 3</option>
+          </select>
+          <select value={year} onChange={e => setYear(parseInt(e.target.value))} className="input-field">
+            {[2026, 2027, 2025, 2024].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
 
