@@ -4,7 +4,7 @@ import { requestTeacherOtp, verifyTeacherOtp } from '../utils/api.js';
 
 export default function TeacherLogin() {
   const [step, setStep] = useState('credential'); // credential → otp
-  const [credential, setCredential] = useState(''); // phone or email
+  const [credential, setCredential] = useState('jonathankiranga@gmail.com'); // phone or email
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sessionId, setSessionId] = useState('');
@@ -14,15 +14,11 @@ export default function TeacherLogin() {
     setLoading(true);
     setError('');
     try {
-      const isEmail = credential.includes('@');
-      const data = await requestTeacherOtp(
-        isEmail ? undefined : credential,
-        isEmail ? credential : undefined
-      );
+      const data = await requestTeacherOtp(credential);
       setSessionId(data.session_id);
       setStep('otp');
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to send OTP. Check your phone or email.');
+      setError(err.response?.data?.error || 'Failed to send OTP. Check your email or phone.');
     }
     setLoading(false);
   }
