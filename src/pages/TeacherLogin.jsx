@@ -4,7 +4,7 @@ import { requestTeacherOtp, verifyTeacherOtp } from '../utils/api.js';
 
 export default function TeacherLogin() {
   const [step, setStep] = useState('credential'); // credential → otp
-  const [credential, setCredential] = useState('jonathankiranga@gmail.com'); // phone or email
+  const [credential, setCredential] = useState(''); // phone or email, user enters any
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sessionId, setSessionId] = useState('');
