@@ -248,17 +248,17 @@ export async function deleteExamSession(id) {
 }
 
 export async function getLearningAreasWithSubAreas(schoolId) {
-  const { data } = await api.get('/api/sub-learning-areas', { params: { school_id: schoolId } });
+  const { data } = await api.get('/api/exam-sessions/sub-learning-areas', { params: { school_id: schoolId } });
   return data;
 }
 
 export async function createSubLearningArea(body) {
-  const { data } = await api.post('/api/sub-learning-areas', body);
+  const { data } = await api.post('/api/exam-sessions/sub-learning-areas', body);
   return data;
 }
 
 export async function deleteSubLearningArea(id) {
-  const { data } = await api.delete(`/api/sub-learning-areas/${id}`);
+  const { data } = await api.delete(`/api/exam-sessions/sub-learning-areas/${id}`);
   return data;
 }
 
