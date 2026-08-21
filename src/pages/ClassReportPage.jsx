@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { fetchStudents } from '../utils/api.js';
-import { getClassReport, getCompetencies, saveCompetencyRatings } from '../utils/api.js';
+import { getClassReport, getCompetencies, saveCompetencyRatings, getClasses } from '../utils/api.js';
 import { jsPDF } from 'jspdf';
 
 const LEVEL_LABELS = { EE: 'Exceeding Expectations', ME: 'Meeting Expectations', AE: 'Approaching Expectations', BE: 'Below Expectations' };
@@ -60,12 +60,12 @@ export default function ClassReportPage() {
 
   useEffect(() => {
     if (!teacherId) return;
-    fetchStudents(teacherId).then(data => {
-      const list = data.students || [];
-      const classMap = {};
-      list.forEach(s => { if (s.class_id) classMap[s.class_id] = s.class_name || 'Class'; });
-      setClasses(Object.entries(classMap).map(([id, name]) => ({ value: id, label: name })));
-    }).catch(() => {});
+    const schoolId = sessionStorage.getItem('school_id');
+    if (schoolId) {
+      getClasses(schoolId).then(d => {
+        setClasses((d.classes || []).map(c => ({ value: c.class_id, label: c.class_name })));
+      }).catch(() => {});
+    }
     getCompetencies().then(setCompetencyDefs).catch(() => {});
   }, [teacherId]);
 
