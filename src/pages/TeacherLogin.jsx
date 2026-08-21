@@ -41,6 +41,7 @@ export default function TeacherLogin() {
     setError('');
     try {
       const data = await verifyTeacherOtp(sessionId, code);
+      sessionStorage.setItem('session_id', data.session_id);
       sessionStorage.setItem('teacher_id', data.teacher_id);
       sessionStorage.setItem('school_id', data.school_id);
       sessionStorage.setItem('role', data.role || 'teacher');

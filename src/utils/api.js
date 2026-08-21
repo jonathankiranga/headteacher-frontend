@@ -6,6 +6,13 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 });
 
+// Attach the OTP session token to every request (school-head endpoints require it)
+api.interceptors.request.use(config => {
+  const token = sessionStorage.getItem('session_id');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 // Auth
 export async function requestTeacherOtp(phone, email) {
   const { data } = await api.post('/api/teachers/request-otp', { phone, email });

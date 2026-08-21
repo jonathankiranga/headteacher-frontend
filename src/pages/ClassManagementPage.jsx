@@ -20,13 +20,13 @@ export default function ClassManagementPage() {
 
   function loadData() {
     setLoading(true);
-    Promise.all([
-      api.get(`/api/school-head/${schoolId}/classes`),
-      api.get(`/api/school-head/${schoolId}/streams`)
-    ]).then(([c, s]) => {
-      setClasses(c.data.classes || []);
-      setStreams(s.data.streams || []);
-    }).catch(() => {}).finally(() => setLoading(false));
+    api.get(`/api/school-head/${schoolId}/classes`)
+      .then(c => setClasses(c.data.classes || []))
+      .catch(() => {});
+    api.get(`/api/school-head/${schoolId}/streams`)
+      .then(s => setStreams(s.data.streams || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }
 
   async function handleCreateClass(e) {
