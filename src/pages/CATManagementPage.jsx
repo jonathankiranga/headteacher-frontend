@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchStudents, getLearningAreas, getExamSessions, createExamSession, updateExamSessionStatus, deleteExamSession, getLearningAreasWithSubAreas, createSubLearningArea, deleteSubLearningArea } from '../utils/api.js';
+import { fetchStudents, getLearningAreas, getExamSessions, createExamSession, updateExamSessionStatus, deleteExamSession, getLearningAreasWithSubAreas, createSubLearningArea, deleteSubLearningArea, getClasses } from '../utils/api.js';
 
 export default function CATManagementPage() {
   const navigate = useNavigate();
@@ -32,14 +32,11 @@ export default function CATManagementPage() {
 
   // Load classes
   useEffect(() => {
-    if (!teacherId) return;
-    fetchStudents(teacherId).then(data => {
-      const list = data.students || [];
-      const classMap = {};
-      list.forEach(s => { if (s.class_id) classMap[s.class_id] = s.class_name || 'Class'; });
-      setClasses(Object.entries(classMap).map(([id, name]) => ({ value: id, label: name })));
+    if (!schoolId) return;
+    getClasses(schoolId).then(d => {
+      setClasses((d.data.classes || []).map(c => ({ value: c.class_id, label: c.class_name })));
     }).catch(() => {});
-  }, [teacherId]);
+  }, [schoolId]);
 
   // Load learning areas
   useEffect(() => {
