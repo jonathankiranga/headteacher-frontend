@@ -45,7 +45,7 @@ export default function PromotionPage() {
         if (current) {
           const nextRank = null; // We need class_rank, which may not exist
           // Since classes don't have class_rank, we infer from level_name
-          const levels = ['Pre-Primary', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6',
+          const levels = ['PP1', 'PP2', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6',
             'Grade 7', 'Grade 8', 'Grade 9'];
           const curLevel = current.level_name;
           const idx = levels.indexOf(curLevel);
@@ -87,7 +87,7 @@ export default function PromotionPage() {
 
   function buildPreview() {
     const selectedStudents = students.filter(s => selected.has(s.student_id));
-    const levels = ['Pre-Primary', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6',
+    const levels = ['PP1', 'PP2', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6',
       'Grade 7', 'Grade 8', 'Grade 9'];
     const current = classes.find(c => String(c.class_id) === String(fromClassId));
     const curLevel = current?.level_name;

@@ -86,7 +86,7 @@ export default function ClassManagementPage() {
     } catch (err) { alert(err.response?.data?.error || 'Failed'); }
   }
 
-  const levels = ['Pre-Primary', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6',
+  const levels = ['PP1', 'PP2', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6',
     'Grade 7', 'Grade 8', 'Grade 9'];
 
   return (
@@ -157,8 +157,12 @@ export default function ClassManagementPage() {
                       <td className="px-3 py-2.5 text-sm" style={{ color: '#666' }}>{c.stream || '-'}</td>
                       <td className="px-3 py-2.5 text-sm" style={{ color: '#666' }}>{c.academic_year}</td>
                       <td className="px-3 py-2.5 text-right">
-                        <button onClick={() => { setEditClass(c); setShowEditForm(true); }} className="text-xs px-2 py-1 rounded"
-                          style={{ backgroundColor: 'rgba(123,79,155,0.08)', color: '#7B4F9B' }}>Edit</button>
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => { setEditClass(c); setShowEditForm(true); }} className="text-xs px-2 py-1 rounded"
+                            style={{ backgroundColor: 'rgba(123,79,155,0.08)', color: '#7B4F9B' }}>Edit</button>
+                          <button onClick={() => handleDeleteClass(c.class_id)} className="text-xs px-2 py-1 rounded"
+                            style={{ backgroundColor: '#FFEBEE', color: '#C62828' }}>Delete</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
