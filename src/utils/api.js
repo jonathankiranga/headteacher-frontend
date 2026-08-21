@@ -277,4 +277,9 @@ export async function getExamClassReport(sessionId) {
   return data;
 }
 
+export async function getClasses(schoolId) {
+  const { data } = await api.get('/api/fees/classes', { params: { school_id: schoolId } });
+  return data;
+}
+
 export default api;
