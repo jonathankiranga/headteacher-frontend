@@ -15,6 +15,24 @@ export default function PromotionPage() {
   const [committing, setCommitting] = useState(false);
   const [result, setResult] = useState('');
   const [nextClassMap, setNextClassMap] = useState({});
+  const [closeYear, setCloseYear] = useState(new Date().getFullYear());
+  const [closing, setClosing] = useState(false);
+  const [closeResult, setCloseResult] = useState(null);
+
+  async function handleYearEndClose() {
+    if (!window.confirm(
+      `End of Year Close (${closeYear})\n\nEvery active student moves up one class level (same stream where possible). Students in the highest level will be marked Graduated.\n\nThis cannot be undone. Continue?`
+    )) return;
+    setClosing(true);
+    setCloseResult(null);
+    try {
+      const r = await api.post(`/api/school-head/${schoolId}/academic-year/close`, { from_year: closeYear });
+      setCloseResult(r.data);
+    } catch (err) {
+      setCloseResult({ error: err.response?.data?.error || 'Year-end close failed' });
+    }
+    setClosing(false);
+  }
 
   useEffect(() => {
     if (!schoolId) return;
@@ -130,6 +148,34 @@ export default function PromotionPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6">
+        {/* End of Year Close */}
+        <div className="card p-6 mb-5" style={{ borderColor: '#7B4F9B', borderWidth: 1 }}>
+          <h2 className="text-base font-bold mb-1" style={{ color: '#333' }}>🎓 End of Year Close</h2>
+          <p className="text-xs mb-4" style={{ color: '#888' }}>
+            Moves every active student up one class level (PP1→PP2→Grade 1…Grade 9). Same stream is kept when available.
+            Students in the highest level graduate. All moves are recorded in promotion history.
+          </p>
+          <div className="flex gap-2 items-end">
+            <div className="flex-1">
+              <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Closing Academic Year</label>
+              <input type="number" value={closeYear} onChange={e => setCloseYear(e.target.value)} className="input-field" />
+            </div>
+            <button onClick={handleYearEndClose} disabled={closing} className="btn-primary whitespace-nowrap">
+              {closing ? 'Processing...' : 'Run Year-End Close'}
+            </button>
+          </div>
+          {closeResult && !closeResult.error && (
+            <div className="text-sm mt-3 p-3 rounded" style={{ backgroundColor: '#E8F5E9', color: '#2E7D32' }}>
+              Done: {closeResult.promoted} promoted, {closeResult.graduated} graduated across {closeResult.levels} levels.
+            </div>
+          )}
+          {closeResult?.error && (
+            <div className="text-sm mt-3 p-3 rounded" style={{ backgroundColor: '#FFEBEE', color: '#C62828' }}>
+              {closeResult.error}
+            </div>
+          )}
+        </div>
+
         <div className="card p-6">
           <div className="mb-4">
             <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Step 1: Select Current Class</label>
