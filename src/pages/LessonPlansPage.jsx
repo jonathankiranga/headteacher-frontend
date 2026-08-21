@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchStudents } from '../utils/api.js';
-import { getLearningAreas, getStrands, getSubStrands, getLessonPlans, createLessonPlan, updateLessonPlan, deleteLessonPlan } from '../utils/api.js';
+import { fetchStudents, getLearningAreas, getStrands, getSubStrands, getLessonPlans, createLessonPlan, updateLessonPlan, deleteLessonPlan, getClasses } from '../utils/api.js';
 
 function LessonPlanModal({ plan, schoolId, onClose, onSaved }) {
   const [areas, setAreas] = useState([]);
@@ -32,13 +31,13 @@ function LessonPlanModal({ plan, schoolId, onClose, onSaved }) {
       getLearningAreas(schoolId, '').then(d => setAreas((d.areas || []).map(a => ({ value: a.area_id, label: a.area_name })))).catch(() => {});
     }
     if (teacherId) {
-      fetchStudents(teacherId).then(data => {
-        const list = data.students || [];
-        const classMap = {};
-        list.forEach(s => { if (s.class_id) classMap[s.class_id] = s.class_name || 'Class'; });
-        const cls = Object.entries(classMap).map(([id, name]) => ({ value: id, label: name }));
+      getClasses(schoolId).then(d => {
+        const cls = (d.classes || []).map(c => ({ value: c.class_id, label: c.class_name }));
         setClasses(cls);
-        setStudentData({ students: list, classes: cls });
+        setStudentData(prev => ({ ...prev, classes: cls }));
+      }).catch(() => {});
+      fetchStudents(teacherId).then(data => {
+        setStudentData(prev => ({ ...prev, students: data.students || [] }));
       }).catch(() => {});
     }
   }, [schoolId]);

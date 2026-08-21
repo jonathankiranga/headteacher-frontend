@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchStudents, getCompetencies, getClassCompetencyRatings, saveCompetencyRatings } from '../utils/api.js';
+import { fetchStudents, getCompetencies, getClassCompetencyRatings, saveCompetencyRatings, getClasses } from '../utils/api.js';
 
 function getLevelColor(level) {
   if (level === 'EE') return { bg: '#E8F5E9', text: '#2E7D32' };
@@ -30,11 +30,9 @@ export default function CompetencyRatingsPage() {
 
   useEffect(() => {
     if (!teacherId) return;
-    fetchStudents(teacherId).then(data => {
-      const list = data.students || [];
-      const classMap = {};
-      list.forEach(s => { if (s.class_id) classMap[s.class_id] = s.class_name || 'Class'; });
-      setClasses(Object.entries(classMap).map(([id, name]) => ({ value: id, label: name })));
+    const schoolId = sessionStorage.getItem('school_id');
+    getClasses(schoolId).then(d => {
+      setClasses((d.classes || []).map(c => ({ value: c.class_id, label: c.class_name })));
     }).catch(() => {});
     getCompetencies().then(setCompetencyDefs).catch(() => {});
   }, [teacherId]);
