@@ -290,11 +290,6 @@ export async function getClasses(schoolId) {
 }
 
 // Teacher ↔ Class assignments
-export async function getMyClasses(schoolId) {
-  const { data } = await api.get(`/api/school-head/${schoolId}/my-classes`);
-  return data;
-}
-
 export async function getAssignments(schoolId) {
   const { data } = await api.get(`/api/school-head/${schoolId}/assignments`);
   return data;

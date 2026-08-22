@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getStrandPerformance, getMyClasses } from '../utils/api.js';
+import { getStrandPerformance, getClasses } from '../utils/api.js';
 
 const LEVEL_COLORS = {
   EE: { bg: '#E8F5E9', text: '#2E7D32', label: 'Exceeding Expectations' },
@@ -49,10 +49,10 @@ export default function StrandPerformancePage() {
 
   useEffect(() => { loadReport(); }, [schoolId, classId, term, year]);
 
-  // Load my classes for teacher filter
+  // Load classes for filter
   useEffect(() => {
     if (!schoolId) return;
-    getMyClasses(schoolId)
+    getClasses(schoolId)
       .then(r => {
         if (r.classes) {
           setMyClasses(r.classes.map(c => ({ value: c.class_id, label: c.class_name })));

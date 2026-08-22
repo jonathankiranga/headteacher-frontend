@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getLevelDistribution } from '../utils/api.js';
+import { getLevelDistribution, getClasses } from '../utils/api.js';
 
 const LEVEL_COLORS = {
   EE: { bg: '#E8F5E9', text: '#2E7D32', label: 'Exceeding Expectations' },
@@ -34,16 +34,16 @@ export default function LevelDistributionPage() {
     }
   }, [schoolId, term, year, classId]);
 
-  // Load my classes for teacher filter
+  // Load classes for filter
   useEffect(() => {
     if (schoolId) {
-      getLevelDistribution(schoolId, term, year) // returns scoped classes for both roles
+      getClasses(schoolId)
         .then(r => {
           if (r.classes) setMyClasses(r.classes.map(c => ({ value: c.class_id, label: c.class_name })));
         })
         .catch(() => {});
     }
-  }, [schoolId, term, year]);
+  }, [schoolId]);
 
   async function handlePrint() {
     window.print();
