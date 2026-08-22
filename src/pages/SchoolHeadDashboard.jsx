@@ -186,8 +186,8 @@ STU003,Grace Akinyi,254722998877,Mary Akinyi
     URL.revokeObjectURL(url);
   }
 
-  function downloadExcelTemplate() {
-    const XLSX = require('xlsx');
+  async function downloadExcelTemplate() {
+    const XLSX = await import('xlsx');
     const data = [
       { student_id: 'STU001', full_name: 'Jane Wanjiku', parent_phone: '', parent_name: '' },
       { student_id: 'STU002', full_name: 'Peter Kamau', parent_phone: '254712345678', parent_name: '' },
