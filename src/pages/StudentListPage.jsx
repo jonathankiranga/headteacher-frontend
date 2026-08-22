@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import api from '../utils/api.js';
 
 function StudentFormModal({ schoolId, student, classes, onClose, onSaved }) {
+  const isEdit = !!student;
   const [form, setForm] = useState({
+    student_id: student?.student_id || '',
     full_name: student?.full_name || '',
     class_id: student?.class_id || '',
     gender: student?.gender || '',
@@ -54,6 +56,12 @@ function StudentFormModal({ schoolId, student, classes, onClose, onSaved }) {
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
+            {!isEdit && (
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Student ID *</label>
+                <input name="student_id" value={form.student_id} onChange={handleChange} className="input-field" required />
+              </div>
+            )}
             <div className="col-span-2">
               <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Full Name *</label>
               <input name="full_name" value={form.full_name} onChange={handleChange} className="input-field" required />
