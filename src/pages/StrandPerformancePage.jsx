@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStrandPerformance, getClasses } from '../utils/api.js';
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 
 const LEVEL_COLORS = {
   EE: { bg: '#E8F5E9', text: '#2E7D32', label: 'Exceeding Expectations' },
@@ -32,7 +31,6 @@ export default function StrandPerformancePage() {
   const [myClasses, setMyClasses] = useState([]);
   const [expandedAreas, setExpandedAreas] = useState({});
   const [exporting, setExporting] = useState(false);
-  const reportRef = useRef(null);
 
   useEffect(() => {
     if (!teacherId) navigate('/teacher/login', { replace: true });
@@ -67,26 +65,205 @@ export default function StrandPerformancePage() {
   }, [schoolId]);
 
   async function handleDownloadPdf() {
-    if (!reportRef.current) return;
+    if (!report) return;
     setExporting(true);
     try {
-      const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      let heightLeft = pdfHeight;
-      let position = 10;
-      pdf.addImage(imgData, 'PNG', 10, position, pdfWidth, pdfHeight);
-      heightLeft -= (pdf.internal.pageSize.getHeight() - 20);
-      while (heightLeft > 0) {
-        position = heightLeft - pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 10, position, pdfWidth, pdfHeight);
-        heightLeft -= (pdf.internal.pageSize.getHeight() - 20);
+      const doc = new jsPDF('landscape');
+      const areas = report.areas || [];
+      const cls = { class_name: report.class_name, term: report.term, year: report.year };
+      let y = 18;
+
+      // Helper: level color
+      const levelColor = (avg) => {
+        if (avg === null || avg === undefined) return null;
+        if (avg >= 80) return { code: 'EE', label: 'EE' };
+        if (avg >= 60) return { code: 'ME', label: 'ME' };
+        if (avg >= 40) return { code: 'AE', label: 'AE' };
+        return { code: 'BE', label: 'BE' };
+      };
+
+      // ========== HEADER ==========
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text('Strand / Sub-strand Performance Report', 14, y);
+      y += 8;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(`Class: ${cls.class_name}`, 14, y);
+      y += 6;
+      doc.text(`Term: ${cls.term} · ${cls.year}`, 14, y);
+      y += 6;
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, y);
+      y += 10;
+
+      // ========== SUMMARY STATS ==========
+      // Collect all sub-strand avgs across areas
+      let allSubStrandAvgs = [];
+      let totalSubStrands = 0;
+      let assessedSubStrands = 0;
+      areas.forEach(area => {
+        (area.strands || []).forEach(strand => {
+          (strand.sub_strands || []).forEach(sub => {
+            totalSubStrands++;
+            if (sub.class_avg !== null && sub.class_avg !== undefined) {
+              assessedSubStrands++;
+              allSubStrandAvgs.push(sub.class_avg);
+            }
+          });
+        });
+      });
+      const overallAvg = allSubStrandAvgs.length > 0
+        ? Math.round(allSubStrandAvgs.reduce((a, b) => a + b, 0) / allSubStrandAvgs.length * 10) / 10
+        : null;
+      const overallLevel = overallAvg !== null ? levelColor(overallAvg).label : '—';
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('Summary', 14, y);
+      y += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text(`Total Areas: ${areas.length} | Total Strands: ${areas.reduce((s, a) => s + (a.strands?.length || 0), 0)} | Total Sub-strands: ${totalSubStrands}`, 14, y);
+      y += 5;
+      doc.text(`Sub-strands Assessed: ${assessedSubStrands}/${totalSubStrands} | Overall Average: ${overallAvg !== null ? overallAvg + '%' : 'N/A'} (${overallLevel})`, 14, y);
+      y += 10;
+
+      // ========== DETAIL TABLE ==========
+      // Calculate column positions
+      const leftMargin = 14;
+      const pageWidth = doc.internal.pageSize.getWidth() - 28; // landscape A4 usable width
+      const colNameWidth = 50;
+      const colStrandWidth = 55;
+      const colSubWidth = 55;
+      const colAvgWidth = 20;
+      const colLevelWidth = 18;
+      const colCountWidth = 22;
+      const colStart = leftMargin;
+
+      const colX = [
+        colStart,                              // Area
+        colStart + colNameWidth,               // Strand
+        colStart + colNameWidth + colStrandWidth, // Sub-strand
+        colStart + colNameWidth + colStrandWidth + colSubWidth, // Class Avg
+        colStart + colNameWidth + colStrandWidth + colSubWidth + colAvgWidth, // Level
+        colStart + colNameWidth + colStrandWidth + colSubWidth + colAvgWidth + colLevelWidth // Students
+      ];
+      const tableEndX = colStart + colNameWidth + colStrandWidth + colSubWidth + colAvgWidth + colLevelWidth + colCountWidth;
+
+      // Table header
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.text('Learning Area', colX[0] + 1, y);
+      doc.text('Strand', colX[1] + 1, y);
+      doc.text('Sub-strand', colX[2] + 1, y);
+      doc.text('Avg %', colX[3] + 1, y);
+      doc.text('Level', colX[4] + 1, y);
+      doc.text('Students', colX[5] + 1, y);
+      y += 4;
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.3);
+      doc.line(leftMargin, y - 1, tableEndX, y - 1);
+
+      // Table rows
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+
+      for (const area of areas) {
+        const strands = area.strands || [];
+        if (strands.length === 0) continue;
+
+        // Area header row
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.text(area.area_name, colX[0] + 1, y);
+        y += 4;
+
+        for (const strand of strands) {
+          const subStrands = strand.sub_strands || [];
+          if (subStrands.length === 0) continue;
+
+          // Strand header row
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(7);
+          doc.text(strand.strand_name, colX[1] + 1, y);
+          y += 4;
+
+          for (const sub of subStrands) {
+            // Check page break
+            if (y > 175) {
+              doc.addPage();
+              y = 18;
+              // Re-draw header
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(8);
+              doc.text('Learning Area', colX[0] + 1, y);
+              doc.text('Strand', colX[1] + 1, y);
+              doc.text('Sub-strand', colX[2] + 1, y);
+              doc.text('Avg %', colX[3] + 1, y);
+              doc.text('Level', colX[4] + 1, y);
+              doc.text('Students', colX[5] + 1, y);
+              y += 4;
+              doc.line(leftMargin, y - 1, tableEndX, y - 1);
+              doc.setFont('helvetica', 'normal');
+              doc.setFontSize(7);
+            }
+
+            const avg = sub.class_avg;
+            const lvl = levelColor(avg);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7);
+            doc.text(sub.sub_strand_name, colX[2] + 1, y);
+            doc.text(avg !== null && avg !== undefined ? `${avg}%` : '—', colX[3] + 1, y);
+            doc.text(lvl ? lvl.label : '—', colX[4] + 2, y);
+            doc.text(String(sub.student_count || 0), colX[5] + 2, y);
+            y += 4;
+          }
+
+          // Strand summary row
+          const strandAssessed = subStrands.filter(s => s.class_avg !== null && s.class_avg !== undefined);
+          if (strandAssessed.length > 0) {
+            const strandAvg = Math.round(strandAssessed.reduce((a, b) => a + b.class_avg, 0) / strandAssessed.length * 10) / 10;
+            const strandLevel = levelColor(strandAvg);
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(7);
+            doc.text(`Strand Average: ${strandAvg}% (${strandLevel.label})`, colX[1] + 1, y);
+            y += 4;
+          }
+        }
+
+        // Area summary row
+        const areaAssessed = strands.flatMap(s => s.sub_strands || []).filter(s => s.class_avg !== null && s.class_avg !== undefined);
+        if (areaAssessed.length > 0) {
+          const areaAvg = Math.round(areaAssessed.reduce((a, b) => a + b.class_avg, 0) / areaAssessed.length * 10) / 10;
+          const areaLevel = levelColor(areaAvg);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(7);
+          doc.text(`Area Average: ${areaAvg}% (${areaLevel.label})`, colX[0] + 1, y);
+          y += 6;
+        }
+        y += 3; // spacing between areas
       }
-      pdf.save(`strand-performance-${report.class_name}-${term}-${year}.pdf`);
+
+      // ========== FOOTER SUMMARY ==========
+      y += 5;
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.5);
+      doc.line(leftMargin, y, tableEndX, y);
+      y += 5;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('Overall Summary', leftMargin, y);
+      y += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text(`Total Sub-strands: ${totalSubStrands} | Assessed: ${assessedSubStrands} | Not Assessed: ${totalSubStrands - assessedSubStrands}`, leftMargin, y);
+      y += 5;
+      doc.text(`Overall Average: ${overallAvg !== null ? overallAvg + '%' : 'N/A'} | Level: ${overallLevel}`, leftMargin, y);
+      y += 5;
+      doc.text(`Report generated on ${new Date().toLocaleString()}`, leftMargin, y);
+
+      doc.save(`strand-performance-${cls.class_name}-${cls.term}-${cls.year}.pdf`);
     } catch (e) {
       console.error(e);
     }
@@ -135,7 +312,7 @@ export default function StrandPerformancePage() {
 
       {report && (
         <>
-          <div className="card p-4 mb-4" ref={reportRef}>
+          <div className="card p-4 mb-4">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h2 className="text-lg font-bold" style={{ color: '#333' }}>{report.class_name}</h2>

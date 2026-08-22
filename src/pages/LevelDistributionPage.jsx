@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getLevelDistribution, getClasses } from '../utils/api.js';
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 
 const LEVEL_COLORS = {
   EE: { bg: '#E8F5E9', text: '#2E7D32', label: 'Exceeding Expectations' },
@@ -24,7 +23,6 @@ export default function LevelDistributionPage() {
   const [error, setError] = useState('');
   const [myClasses, setMyClasses] = useState([]);
   const [exporting, setExporting] = useState(false);
-  const reportRef = useRef(null);
 
   useEffect(() => {
     if (!teacherId) navigate('/teacher/login', { replace: true });
@@ -50,26 +48,169 @@ export default function LevelDistributionPage() {
   }, [schoolId]);
 
   async function handleDownloadPdf() {
-    if (!reportRef.current) return;
+    if (!report) return;
     setExporting(true);
     try {
-      const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      let heightLeft = pdfHeight;
-      let position = 10;
-      pdf.addImage(imgData, 'PNG', 10, position, pdfWidth, pdfHeight);
-      heightLeft -= (pdf.internal.pageSize.getHeight() - 20);
-      while (heightLeft > 0) {
-        position = heightLeft - pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 10, position, pdfWidth, pdfHeight);
-        heightLeft -= (pdf.internal.pageSize.getHeight() - 20);
+      const doc = new jsPDF('landscape');
+      const classes = report.classes || [];
+      const school = report.school || {};
+      const cls = { class_name: classId ? classes.find(c => c.class_id === Number(classId))?.class_name : 'All Classes', term, year };
+      let y = 18;
+
+      const levelColor = (pct) => {
+        if (pct === null || pct === undefined) return null;
+        if (pct >= 80) return { code: 'EE', label: 'EE' };
+        if (pct >= 60) return { code: 'ME', label: 'ME' };
+        if (pct >= 40) return { code: 'AE', label: 'AE' };
+        return { code: 'BE', label: 'BE' };
+      };
+
+      const leftMargin = 14;
+      const pageWidth = doc.internal.pageSize.getWidth() - 28;
+      const tableEndX = doc.internal.pageSize.getWidth() - 14;
+
+      // ========== HEADER ==========
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text('Level Distribution Report', 14, y);
+      y += 8;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(`Class: ${cls.class_name}`, 14, y);
+      y += 6;
+      doc.text(`Term: ${cls.term} · ${cls.year}`, 14, y);
+      y += 6;
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, y);
+      y += 10;
+
+      // ========== SCHOOL-WIDE ROLLUP ==========
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('School-wide Rollup', 14, y);
+      y += 6;
+
+      const total = school.total_students || 0;
+      const assessed = school.assessed_students || 0;
+      const avg = school.class_average;
+      const avgLevel = avg !== null ? levelColor(avg).label : '—';
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text(`Total Students: ${total} | Assessed: ${assessed} | Class Average: ${avg !== null ? avg + '%' : 'N/A'} (${avg !== null ? levelColor(avg).label : '—'})`, 14, y);
+      y += 5;
+      doc.text(`Classes: ${classes.length} | Below Expectations: ${school.level_percentages?.BE || 0}%`, 14, y);
+      y += 8;
+
+      // Level distribution bars (text representation)
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('Level Distribution', 14, y);
+      y += 5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      ['EE', 'ME', 'AE', 'BE'].forEach(lv => {
+        const c = { EE: '#2E7D32', ME: '#1565C0', AE: '#E65100', BE: '#C62828' }[lv];
+        const count = school.level_counts?.[lv] || 0;
+        const pct = school.level_percentages?.[lv] || 0;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.text(`${lv}:`, 14, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${count} (${pct}%)`, 35, y);
+        y += 4;
+      });
+      y += 6;
+
+      // ========== PER-CLASS BREAKDOWN TABLE ==========
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('Per-Class Breakdown', 14, y);
+      y += 6;
+
+      const colClass = 14;
+      const colStudents = 14 + 50;
+      const colAvg = 14 + 50 + 25;
+      const colEE = 14 + 50 + 25 + 22;
+      const colME = colEE + 20;
+      const colAE = colME + 20;
+      const colBE = colAE + 20;
+      const tableEndX2 = colBE + 20;
+
+      // Table header
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.text('Class', colClass + 1, y);
+      doc.text('Students', colStudents + 1, y);
+      doc.text('Avg %', colAvg + 1, y);
+      doc.text('EE', colEE + 1, y);
+      doc.text('ME', colME + 1, y);
+      doc.text('AE', colAE + 1, y);
+      doc.text('BE', colBE + 1, y);
+      y += 4;
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.3);
+      doc.line(leftMargin, y - 1, tableEndX2, y - 1);
+
+      // Table rows
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+
+      for (const c of classes) {
+        if (y > 175) {
+          doc.addPage();
+          y = 18;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          doc.text('Class', 15, y);
+          doc.text('Students', 65, y);
+          doc.text('Avg %', 90, y);
+          doc.text('EE', 112, y);
+          doc.text('ME', 132, y);
+          doc.text('AE', 152, y);
+          doc.text('BE', 172, y);
+          y += 4;
+          doc.line(leftMargin, y - 1, tableEndX2, y - 1);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7);
+        }
+
+        const avg = c.class_average;
+        const avgLevel = avg !== null ? levelColor(avg).label : '—';
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.text(c.class_name.substring(0, 30), 15, y);
+        doc.text(String(c.total_students || 0), colStudents + 2, y);
+        doc.text(avg !== null ? `${avg}%` : '—', colAvg + 1, y);
+        doc.text(String(c.level_counts?.EE || 0), colEE + 2, y);
+        doc.text(String(c.level_counts?.ME || 0), colME + 2, y);
+        doc.text(String(c.level_counts?.AE || 0), colAE + 2, y);
+        doc.text(String(c.level_counts?.BE || 0), colBE + 2, y);
+        y += 4;
       }
-      pdf.save(`level-distribution-${term}-${year}${classId ? '-' + classId : ''}.pdf`);
+
+      // ========== FOOTER ==========
+      y += 5;
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.5);
+      doc.line(leftMargin, y, 14 + 50 + 25 + 22 + 20 + 20 + 20 + 20, y);
+      y += 5;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('Summary', leftMargin, y);
+      y += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text(`Total Students: ${school.total_students || 0} | Assessed: ${school.assessed_students || 0} | Classes: ${classes.length}`, leftMargin, y);
+      y += 5;
+      doc.text(`School Average: ${school.class_average !== null ? school.class_average + '%' : 'N/A'} (${school.class_average !== null ? levelColor(school.class_average).label : '—'})`, leftMargin, y);
+      y += 5;
+      const levelDist = ['EE', 'ME', 'AE', 'BE'].map(lv => `${lv}: ${school.level_counts?.[lv] || 0} (${school.level_percentages?.[lv] || 0}%)`).join(' | ');
+      doc.text(`Level Distribution: ${levelDist}`, leftMargin, y);
+      y += 5;
+      doc.text(`Report generated on ${new Date().toLocaleString()}`, leftMargin, y);
+
+      doc.save(`level-distribution-${term}-${year}${classId ? '-' + classId : ''}.pdf`);
     } catch (e) {
       console.error(e);
     }
@@ -117,7 +258,7 @@ export default function LevelDistributionPage() {
       )}
 
 {report && (
-          <div className="card p-4 mb-4" ref={reportRef}>
+          <div className="card p-4 mb-4">
             <h2 className="font-semibold mb-3" style={{ color: '#333' }}>School-wide Rollup</h2>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="text-center p-3 rounded" style={{ backgroundColor: '#F3E5F5' }}>
