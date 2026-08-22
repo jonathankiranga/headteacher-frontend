@@ -36,14 +36,14 @@ export default function LevelDistributionPage() {
 
   // Load my classes for teacher filter
   useEffect(() => {
-    if (schoolId && role !== 'head') {
-      getLevelDistribution(schoolId, term, year) // use same endpoint — it returns scoped classes
+    if (schoolId) {
+      getLevelDistribution(schoolId, term, year) // returns scoped classes for both roles
         .then(r => {
           if (r.classes) setMyClasses(r.classes.map(c => ({ value: c.class_id, label: c.class_name })));
         })
         .catch(() => {});
     }
-  }, [schoolId, role]);
+  }, [schoolId, term, year]);
 
   async function handlePrint() {
     window.print();

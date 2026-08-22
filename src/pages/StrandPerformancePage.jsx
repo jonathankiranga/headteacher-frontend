@@ -51,17 +51,16 @@ export default function StrandPerformancePage() {
 
   // Load my classes for teacher filter
   useEffect(() => {
-    if (schoolId && role !== 'head') {
-      getMyClasses(schoolId)
-        .then(r => {
-          if (r.classes) {
-            setMyClasses(r.classes.map(c => ({ value: c.class_id, label: c.class_name })));
-            if (!classId && r.classes.length) setClassId(r.classes[0].class_id);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [schoolId, role]);
+    if (!schoolId) return;
+    getMyClasses(schoolId)
+      .then(r => {
+        if (r.classes) {
+          setMyClasses(r.classes.map(c => ({ value: c.class_id, label: c.class_name })));
+          if (!classId && r.classes.length) setClassId(r.classes[0].class_id);
+        }
+      })
+      .catch(() => {});
+  }, [schoolId]);
 
   async function handlePrint() {
     window.print();
@@ -81,17 +80,10 @@ export default function StrandPerformancePage() {
 
       <div className="card p-4 mb-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <select value={classId} onChange={e => setClassId(e.target.value)} className="input-field" disabled={role === 'head'}>
-            {role === 'head' 
-              ? <option value="">Select a class first</option>
-              : myClasses.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          <select value={classId} onChange={e => setClassId(e.target.value)} className="input-field">
+            <option value="">— Select Class —</option>
+            {myClasses.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
-          {role === 'head' && (
-            <select value={classId} onChange={e => setClassId(e.target.value)} className="input-field">
-              <option value="">— Select Class —</option>
-              {/* In practice would fetch classes for head; for now they'd know IDs or we'd need a class list endpoint */}
-            </select>
-          )}
           <select value={term} onChange={e => setTerm(e.target.value)} className="input-field">
             <option value="Term 1">Term 1</option>
             <option value="Term 2">Term 2</option>
