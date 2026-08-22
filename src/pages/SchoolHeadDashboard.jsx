@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api, { fetchTeachers, addTeacher, deleteTeacher } from '../utils/api.js';
+import api, { fetchTeachers, addTeacher, deleteTeacher, getAssignments, updateAssignments } from '../utils/api.js';
 
 function BroadcastModal({ schoolId, onClose }) {
   const [message, setMessage] = useState('');
@@ -101,6 +101,51 @@ function AddTeacherModal({ schoolId, onClose, onAdded }) {
   );
 }
 
+function AssignClassesModal({ schoolId, teacher, allClasses, onClose, onSaved }) {
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState('');
+
+  async function handleSave() {
+    setSaving(true);
+    setResult('');
+    try {
+      await updateAssignments(schoolId, teacher.teacher_id, selectedIds);
+      setResult(`Assigned ${selectedIds.length} class${selectedIds.length === 1 ? '' : 'es'}`);
+      onSaved();
+    } catch (err) {
+      setResult(err.response?.data?.error || 'Failed');
+    }
+    setSaving(false);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
+      <div className="bg-white rounded-card shadow-xl p-6 w-full max-w-lg max-h-[80vh] overflow-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold" style={{ color: '#333' }}>Assign Classes — {teacher.full_name}</h2>
+          <button onClick={onClose} className="text-sm" style={{ color: '#888' }}>✕</button>
+        </div>
+        <p className="text-xs mb-3" style={{ color: '#888' }}>Check the classes this teacher teaches. Uncheck to remove assignment.</p>
+        <div className="space-y-2 max-h-[50vh] overflow-auto">
+          {allClasses.map(c => (
+            <label key={c.class_id} className="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="checkbox" checked={selectedIds.includes(c.class_id)} onChange={e => e.target.checked ? setSelectedIds([...selectedIds, c.class_id]) : setSelectedIds(selectedIds.filter(id => id !== c.class_id))} />
+              <span style={{ color: '#333' }}>{c.class_name}</span>
+            </label>
+          ))}
+          {allClasses.length === 0 && <p className="text-sm" style={{ color: '#888' }}>No classes available</p>}
+        </div>
+        {result && <div className="text-sm mt-3 p-2 rounded" style={{ backgroundColor: result.includes('Failed') ? '#FFEBEE' : '#E8F5E9', color: result.includes('Failed') ? '#C62828' : '#2E7D32' }}>{result}</div>}
+        <div className="flex gap-3 mt-4">
+          <button onClick={onClose} className="flex-1 py-3 rounded-lg text-sm font-medium" style={{ backgroundColor: '#F5F5F5', color: '#666' }}>Cancel</button>
+          <button onClick={handleSave} disabled={saving} className="flex-1 py-3 rounded-lg text-sm font-medium text-white" style={{ backgroundColor: '#7B4F9B' }}>{saving ? 'Saving...' : 'Save'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ImportCsvModal({ schoolId, onClose, onAdded }) {
   const [classes, setClasses] = useState([]);
   const [classId, setClassId] = useState('');
@@ -176,6 +221,9 @@ export default function SchoolHeadDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [showCsv, setShowCsv] = useState(false);
   const [showBroadcast, setShowBroadcast] = useState(false);
+  const [showAssign, setShowAssign] = useState(false);
+  const [assignTeacher, setAssignTeacher] = useState(null);
+  const [allClasses, setAllClasses] = useState([]);
   const [deleting, setDeleting] = useState(null);
   const [premiumWarning, setPremiumWarning] = useState('');
 
@@ -208,6 +256,12 @@ export default function SchoolHeadDashboard() {
   }
 
   useEffect(() => { loadTeachers(); }, [schoolId]);
+
+  // Load all classes for the assign modal
+  useEffect(() => {
+    if (!schoolId) return;
+    api.get(`/api/fees/classes?school_id=${schoolId}`).then(r => setAllClasses(r.data.classes || [])).catch(() => {});
+  }, [schoolId]);
 
   async function handleDelete(tid) {
     if (!window.confirm('Remove this teacher?')) return;
@@ -292,6 +346,8 @@ export default function SchoolHeadDashboard() {
                         <div className="flex items-center justify-end gap-2">
                           <button onClick={() => { sessionStorage.setItem('teacher_id', t.teacher_id); navigate('/exams'); }}
                             className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(123,79,155,0.08)', color: '#7B4F9B' }}>Exams</button>
+                          <button onClick={() => { setAssignTeacher(t); setShowAssign(true); }}
+                            className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(46,125,50,0.08)', color: '#2E7D32' }}>Classes</button>
                           {t.role !== 'head' && (
                             <button onClick={() => handleDelete(t.teacher_id)} disabled={deleting === t.teacher_id}
                               className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ backgroundColor: '#FFEBEE', color: '#C62828' }}>
@@ -311,6 +367,7 @@ export default function SchoolHeadDashboard() {
       {showModal && <AddTeacherModal schoolId={schoolId} onClose={() => setShowModal(false)} onAdded={loadTeachers} />}
       {showCsv && <ImportCsvModal schoolId={schoolId} onClose={() => setShowCsv(false)} onAdded={loadTeachers} />}
       {showBroadcast && <BroadcastModal schoolId={schoolId} onClose={() => setShowBroadcast(false)} />}
+      {showAssign && assignTeacher && <AssignClassesModal schoolId={schoolId} teacher={assignTeacher} allClasses={allClasses} onClose={() => setShowAssign(false)} onSaved={loadTeachers} />}
     </div>
   );
 }

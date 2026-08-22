@@ -289,4 +289,35 @@ export async function getClasses(schoolId) {
   return data;
 }
 
+// Teacher ↔ Class assignments
+export async function getMyClasses(schoolId) {
+  const { data } = await api.get(`/api/school-head/${schoolId}/my-classes`);
+  return data;
+}
+
+export async function getAssignments(schoolId) {
+  const { data } = await api.get(`/api/school-head/${schoolId}/assignments`);
+  return data;
+}
+
+export async function updateAssignments(schoolId, teacherId, classIds) {
+  const { data } = await api.put(`/api/school-head/${schoolId}/assignments/${teacherId}`, { class_ids: classIds });
+  return data;
+}
+
+// Reports (scoped by role)
+export async function getLevelDistribution(schoolId, term, year, classId) {
+  const { data } = await api.get(`/api/reports/level-distribution`, {
+    params: { term, year: year || new Date().getFullYear(), class_id: classId }
+  });
+  return data;
+}
+
+export async function getStrandPerformance(schoolId, classId, term, year) {
+  const { data } = await api.get(`/api/reports/strand-performance`, {
+    params: { class_id: classId, term, year: year || new Date().getFullYear() }
+  });
+  return data;
+}
+
 export default api;

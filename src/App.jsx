@@ -17,6 +17,8 @@ import StudentListPage from './pages/StudentListPage.jsx';
 import PromotionPage from './pages/PromotionPage.jsx';
 import ClassManagementPage from './pages/ClassManagementPage.jsx';
 import PremiumManagementPage from './pages/PremiumManagementPage.jsx';
+import LevelDistributionPage from './pages/LevelDistributionPage.jsx';
+import StrandPerformancePage from './pages/StrandPerformancePage.jsx';
 import BottomNav from './components/BottomNav.jsx';
 
 function AppLayout() {
@@ -45,6 +47,8 @@ function AppLayout() {
         <Route path="/promotion" element={<PromotionPage />} />
         <Route path="/classes" element={<ClassManagementPage />} />
         <Route path="/premium" element={<PremiumManagementPage />} />
+        <Route path="/level-distribution" element={<LevelDistributionPage />} />
+        <Route path="/strand-performance" element={<StrandPerformancePage />} />
         <Route path="/help" element={<HelpPage />} />
       </Routes>
       {!hideNav && <BottomNav />}

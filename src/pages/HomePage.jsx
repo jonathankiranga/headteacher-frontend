@@ -2,26 +2,31 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PushManager from '../components/PushManager.jsx';
 
-const modules = [
-  { id: 'attendance', label: 'Attendance', icon: '📋', desc: 'Mark and track daily student attendance', color: '#7B4F9B', route: '/teacher/attendance' },
-  { id: 'exams', label: 'Exams', icon: '📝', desc: 'Create assessments and record scores', color: '#2E7D32', route: '/exams' },
-  { id: 'teachers', label: 'Teachers', icon: '👥', desc: 'Manage teacher accounts and roles', color: '#2563EB', route: '/school-head' },
-  { id: 'fees', label: 'Fee Structure', icon: '💰', desc: 'Set up school fees and track payments', color: '#059669', route: '/fees' },
-  { id: 'analytics', label: 'Analytics', icon: '📈', desc: 'View attendance trends and insights', color: '#0EA5E9', route: '/analytics' },
-  { id: 'reports', label: 'Reports', icon: '📊', desc: 'Generate student report cards', color: '#D97706', route: '/exams/report' },
-  { id: 'lesson-plans', label: 'Lesson Plans', icon: '📖', desc: 'Plan and organize your lessons', color: '#E65100', route: '/lesson-plans' },
-  { id: 'class-report', label: 'Class Report', icon: '📑', desc: 'View class performance summaries', color: '#00695C', route: '/class-report' },
-  { id: 'competency-ratings', label: 'Competency', icon: '⭐', desc: 'Rate core competencies and values', color: '#7B4F9B', route: '/competency-ratings' },
-  { id: 'help', label: 'Help & Support', icon: '❓', desc: 'Get help and contact support', color: '#6B7280', route: '/help' },
+const allModules = [
+  { id: 'attendance', label: 'Attendance', icon: '📋', desc: 'Mark and track daily student attendance', color: '#7B4F9B', route: '/teacher/attendance', roles: ['teacher', 'head'] },
+  { id: 'exams', label: 'Exams', icon: '📝', desc: 'Create assessments and record scores', color: '#2E7D32', route: '/exams', roles: ['teacher', 'head'] },
+  { id: 'teachers', label: 'Teachers', icon: '👥', desc: 'Manage teacher accounts and roles', color: '#2563EB', route: '/school-head', roles: ['head'] },
+  { id: 'fees', label: 'Fee Structure', icon: '💰', desc: 'Set up school fees and track payments', color: '#059669', route: '/fees', roles: ['head'] },
+  { id: 'analytics', label: 'Analytics', icon: '📈', desc: 'View attendance trends and insights', color: '#0EA5E9', route: '/analytics', roles: ['teacher', 'head'] },
+  { id: 'reports', label: 'Reports', icon: '📊', desc: 'Generate student report cards', color: '#D97706', route: '/exams/report', roles: ['teacher', 'head'] },
+  { id: 'lesson-plans', label: 'Lesson Plans', icon: '📖', desc: 'Plan and organize your lessons', color: '#E65100', route: '/lesson-plans', roles: ['teacher', 'head'] },
+  { id: 'class-report', label: 'Class Report', icon: '📑', desc: 'View class performance summaries', color: '#00695C', route: '/class-report', roles: ['teacher', 'head'] },
+  { id: 'competency-ratings', label: 'Competency', icon: '⭐', desc: 'Rate core competencies and values', color: '#7B4F9B', route: '/competency-ratings', roles: ['teacher', 'head'] },
+  { id: 'level-distribution', label: 'Level Distribution', icon: '📊', desc: 'EE/ME/AE/BE across classes', color: '#1565C0', route: '/level-distribution', roles: ['teacher', 'head'] },
+  { id: 'strand-performance', label: 'Strand Performance', icon: '🧬', desc: 'Strand & sub-strand performance', color: '#6A1B9A', route: '/strand-performance', roles: ['teacher', 'head'] },
+  { id: 'help', label: 'Help & Support', icon: '❓', desc: 'Get help and contact support', color: '#6B7280', route: '/help', roles: ['teacher', 'head'] },
 ];
 
 export default function HomePage() {
   const navigate = useNavigate();
   const teacherId = sessionStorage.getItem('teacher_id');
+  const role = sessionStorage.getItem('role') || 'teacher';
 
   useEffect(() => {
     if (!teacherId) navigate('/teacher/login', { replace: true });
   }, [teacherId, navigate]);
+
+  const modules = allModules.filter(m => m.roles.includes(role));
 
   function handleLogout() {
     sessionStorage.clear();
@@ -47,7 +52,9 @@ export default function HomePage() {
               fontSize: 20, fontWeight: 'bold',
             }}>E</div>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 700 }}>Headteacher Dashboard</div>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>
+                {role === 'head' ? 'Headteacher Dashboard' : 'Teacher Dashboard'}
+              </div>
               <div style={{ fontSize: 12, opacity: 0.8 }}>Welcome back</div>
             </div>
           </div>
