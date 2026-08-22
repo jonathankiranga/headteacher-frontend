@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getLevelDistribution, getClasses } from '../utils/api.js';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const LEVEL_COLORS = {
   EE: { bg: '#E8F5E9', text: '#2E7D32', label: 'Exceeding Expectations' },
@@ -21,6 +23,8 @@ export default function LevelDistributionPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [myClasses, setMyClasses] = useState([]);
+  const [exporting, setExporting] = useState(false);
+  const reportRef = useRef(null);
 
   useEffect(() => {
     if (!teacherId) navigate('/teacher/login', { replace: true });
@@ -44,6 +48,33 @@ export default function LevelDistributionPage() {
         .catch(() => {});
     }
   }, [schoolId]);
+
+  async function handleDownloadPdf() {
+    if (!reportRef.current) return;
+    setExporting(true);
+    try {
+      const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      let heightLeft = pdfHeight;
+      let position = 10;
+      pdf.addImage(imgData, 'PNG', 10, position, pdfWidth, pdfHeight);
+      heightLeft -= (pdf.internal.pageSize.getHeight() - 20);
+      while (heightLeft > 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 10, position, pdfWidth, pdfHeight);
+        heightLeft -= (pdf.internal.pageSize.getHeight() - 20);
+      }
+      pdf.save(`level-distribution-${term}-${year}${classId ? '-' + classId : ''}.pdf`);
+    } catch (e) {
+      console.error(e);
+    }
+    setExporting(false);
+  }
 
   async function handlePrint() {
     window.print();
@@ -85,10 +116,8 @@ export default function LevelDistributionPage() {
         </div>
       )}
 
-      {report && (
-        <>
-          {/* School-wide rollup */}
-          <div className="card p-4 mb-4">
+{report && (
+          <div className="card p-4 mb-4" ref={reportRef}>
             <h2 className="font-semibold mb-3" style={{ color: '#333' }}>School-wide Rollup</h2>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="text-center p-3 rounded" style={{ backgroundColor: '#F3E5F5' }}>
@@ -135,53 +164,55 @@ export default function LevelDistributionPage() {
                 );
               })}
             </div>
-          </div>
 
-          {/* Per-class breakdown */}
-          <div className="card p-4">
-            <h2 className="font-semibold mb-3" style={{ color: '#333' }}>Per-Class Breakdown</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr style={{ backgroundColor: '#FAFAFA' }}>
-                    <th className="text-left px-3 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Class</th>
-                    <th className="text-center px-2 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Students</th>
-                    <th className="text-center px-2 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Avg %</th>
-                    {['EE', 'ME', 'AE', 'BE'].map(lv => (
-                      <th key={lv} className="text-center px-2 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>{lv}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {(report.classes || []).map((c, i) => (
-                    <tr key={c.class_id} style={{ borderBottom: i < (report.classes.length - 1) ? '1px solid #F0F0F0' : 'none' }}>
-                      <td className="px-3 py-2 text-sm font-medium" style={{ color: '#333' }}>{c.class_name}</td>
-                      <td className="px-2 py-2 text-sm text-center" style={{ color: '#666' }}>{c.total_students}</td>
-                      <td className="px-2 py-2 text-sm text-center font-semibold" style={{ color: c.class_average !== null ? '#333' : '#999' }}>
-                        {c.class_average !== null ? `${c.class_average}%` : '—'}
-                      </td>
-                      {['EE', 'ME', 'AE', 'BE'].map(lv => {
-                        const clr = LEVEL_COLORS[lv];
-                        return (
-                          <td key={lv} className="px-2 py-2 text-center">
-                            <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: clr.bg, color: clr.text }}>
-                              {c.level_counts?.[lv] || 0}
-                            </span>
-                          </td>
-                        );
-                      })}
+            {/* Per-Class Breakdown */}
+            <div className="card p-4 mt-4">
+              <h2 className="font-semibold mb-3" style={{ color: '#333' }}>Per-Class Breakdown</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ backgroundColor: '#FAFAFA' }}>
+                      <th className="text-left px-3 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Class</th>
+                      <th className="text-center px-2 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Students</th>
+                      <th className="text-center px-2 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Avg %</th>
+                      {['EE', 'ME', 'AE', 'BE'].map(lv => (
+                        <th key={lv} className="text-center px-2 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>{lv}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {(report.classes || []).map((c, i) => (
+                      <tr key={c.class_id} style={{ borderBottom: i < (report.classes.length - 1) ? '1px solid #F0F0F0' : 'none' }}>
+                        <td className="px-3 py-2 text-sm font-medium" style={{ color: '#333' }}>{c.class_name}</td>
+                        <td className="px-2 py-2 text-sm text-center" style={{ color: '#666' }}>{c.total_students}</td>
+                        <td className="px-2 py-2 text-sm text-center font-semibold" style={{ color: c.class_average !== null ? '#333' : '#999' }}>
+                          {c.class_average !== null ? `${c.class_average}%` : '—'}
+                        </td>
+                        {['EE', 'ME', 'AE', 'BE'].map(lv => {
+                          const clr = LEVEL_COLORS[lv];
+                          return (
+                            <td key={lv} className="px-2 py-2 text-center">
+                              <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: clr.bg, color: clr.text }}>
+                                {c.level_counts?.[lv] || 0}
+                              </span>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="text-center mt-4">
+                <button onClick={handleDownloadPdf} disabled={exporting} className="btn-primary text-sm mr-2">
+                  {exporting ? 'Generating...' : 'Download PDF'}
+                </button>
+                <button onClick={handlePrint} className="btn-secondary text-sm">Print</button>
+              </div>
             </div>
           </div>
-
-          <div className="text-center mt-4">
-            <button onClick={handlePrint} className="btn-secondary text-sm">Print</button>
-          </div>
-        </>
-      )}
+        )}
     </div>
   );
 }

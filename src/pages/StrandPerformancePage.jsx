@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStrandPerformance, getClasses } from '../utils/api.js';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const LEVEL_COLORS = {
   EE: { bg: '#E8F5E9', text: '#2E7D32', label: 'Exceeding Expectations' },
@@ -29,6 +31,8 @@ export default function StrandPerformancePage() {
   const [error, setError] = useState('');
   const [myClasses, setMyClasses] = useState([]);
   const [expandedAreas, setExpandedAreas] = useState({});
+  const [exporting, setExporting] = useState(false);
+  const reportRef = useRef(null);
 
   useEffect(() => {
     if (!teacherId) navigate('/teacher/login', { replace: true });
@@ -61,6 +65,33 @@ export default function StrandPerformancePage() {
       })
       .catch(() => {});
   }, [schoolId]);
+
+  async function handleDownloadPdf() {
+    if (!reportRef.current) return;
+    setExporting(true);
+    try {
+      const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      let heightLeft = pdfHeight;
+      let position = 10;
+      pdf.addImage(imgData, 'PNG', 10, position, pdfWidth, pdfHeight);
+      heightLeft -= (pdf.internal.pageSize.getHeight() - 20);
+      while (heightLeft > 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 10, position, pdfWidth, pdfHeight);
+        heightLeft -= (pdf.internal.pageSize.getHeight() - 20);
+      }
+      pdf.save(`strand-performance-${report.class_name}-${term}-${year}.pdf`);
+    } catch (e) {
+      console.error(e);
+    }
+    setExporting(false);
+  }
 
   async function handlePrint() {
     window.print();
@@ -104,13 +135,18 @@ export default function StrandPerformancePage() {
 
       {report && (
         <>
-          <div className="card p-4 mb-4">
+          <div className="card p-4 mb-4" ref={reportRef}>
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h2 className="text-lg font-bold" style={{ color: '#333' }}>{report.class_name}</h2>
                 <p className="text-sm" style={{ color: '#888' }}>{report.term} · {report.year}</p>
               </div>
-              <button onClick={handlePrint} className="btn-secondary text-sm">Print</button>
+              <div className="flex gap-2">
+                <button onClick={handleDownloadPdf} disabled={exporting} className="btn-primary text-sm">
+                  {exporting ? 'Generating...' : 'Download PDF'}
+                </button>
+                <button onClick={handlePrint} className="btn-secondary text-sm">Print</button>
+              </div>
             </div>
 
             {(report.areas || []).map(area => (
