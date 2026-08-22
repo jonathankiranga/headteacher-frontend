@@ -169,6 +169,36 @@ function ImportCsvModal({ schoolId, onClose, onAdded }) {
     reader.readAsText(file);
   }
 
+  function downloadCsvTemplate() {
+    const content = `student_id,full_name
+STU001,Jane Wanjiku
+STU002,Peter Kamau,254712345678
+STU003,Grace Akinyi,254722998877,Mary Akinyi
+`;
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'student-import-template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadExcelTemplate() {
+    const XLSX = require('xlsx');
+    const data = [
+      { student_id: 'STU001', full_name: 'Jane Wanjiku', parent_phone: '', parent_name: '' },
+      { student_id: 'STU002', full_name: 'Peter Kamau', parent_phone: '254712345678', parent_name: '' },
+      { student_id: 'STU003', full_name: 'Grace Akinyi', parent_phone: '254722998877', parent_name: 'Mary Akinyi' },
+    ];
+    const ws = XLSX.utils.json_to_sheet(data, { header: ['student_id', 'full_name', 'parent_phone', 'parent_name'] });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Students');
+    XLSX.writeFile(wb, 'student-import-template.xlsx');
+  }
+
   async function handleImport() {
     if (!classId || !csv.trim()) { setResult('Select a class and upload a CSV file'); return; }
     setLoading(true);
@@ -200,6 +230,10 @@ function ImportCsvModal({ schoolId, onClose, onAdded }) {
           <input type="file" accept=".csv" onChange={handleFileSelect}
             className="input-field" style={{ padding: '8px 12px', fontSize: 13 }} />
           {fileName && <p className="text-xs mt-1" style={{ color: '#2E7D32' }}>Selected: {fileName}</p>}
+        </div>
+        <div className="flex gap-2 mb-3">
+          <button type="button" onClick={downloadCsvTemplate} className="btn-secondary !px-3 !py-1.5 text-xs">Download CSV Template</button>
+          <button type="button" onClick={downloadExcelTemplate} className="btn-secondary !px-3 !py-1.5 text-xs">Download Excel Template</button>
         </div>
         {result && <div className="text-sm mb-3 p-2 rounded" style={{ backgroundColor: result.includes('Failed') || result.includes('Select') ? '#FFEBEE' : '#E8F5E9', color: result.includes('Failed') || result.includes('Select') ? '#C62828' : '#2E7D32' }}>{result}</div>}
         <div className="flex gap-3">
