@@ -67,6 +67,11 @@ export async function deleteTeacher(schoolId, teacherId) {
   return data;
 }
 
+export async function setTeacherActive(schoolId, teacherId, active) {
+  const { data } = await api.patch(`/api/school-head/${schoolId}/teachers/${teacherId}`, { active });
+  return data;
+}
+
 // Schools / Search
 export async function searchSchools(query) {
   const { data } = await api.get('/api/schools/search', { params: { q: query } });

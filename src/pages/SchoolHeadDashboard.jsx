@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api, { fetchTeachers, addTeacher, deleteTeacher, getAssignments, updateAssignments } from '../utils/api.js';
+import api, { fetchTeachers, addTeacher, deleteTeacher, setTeacherActive, getAssignments, updateAssignments } from '../utils/api.js';
 
 function BroadcastModal({ schoolId, onClose }) {
   const [message, setMessage] = useState('');
@@ -304,6 +304,12 @@ export default function SchoolHeadDashboard() {
     setDeleting(null);
   }
 
+  async function handleToggleActive(t) {
+    setDeleting(t.teacher_id);
+    try { await setTeacherActive(schoolId, t.teacher_id, t.active === 0); loadTeachers(); } catch (e) { /* ignore */ }
+    setDeleting(null);
+  }
+
   return (
     <div style={{
       minHeight: '100vh', paddingBottom: 70,
@@ -370,6 +376,9 @@ export default function SchoolHeadDashboard() {
                             {t.full_name ? t.full_name.charAt(0).toUpperCase() : '?'}
                           </div>
                           <span className="text-sm font-medium" style={{ color: '#333' }}>{t.full_name}</span>
+                          {t.active === 0 && (
+                            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#FFEBEE', color: '#C62828' }}>Inactive</span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3.5 text-sm hidden sm:table-cell" style={{ color: '#666' }}>{t.phone}</td>
@@ -383,10 +392,17 @@ export default function SchoolHeadDashboard() {
                           <button onClick={() => { setAssignTeacher(t); setShowAssign(true); }}
                             className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(46,125,50,0.08)', color: '#2E7D32' }}>Classes</button>
                           {t.role !== 'head' && (
-                            <button onClick={() => handleDelete(t.teacher_id)} disabled={deleting === t.teacher_id}
-                              className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ backgroundColor: '#FFEBEE', color: '#C62828' }}>
-                              {deleting === t.teacher_id ? '...' : 'Remove'}
-                            </button>
+                            <>
+                              <button onClick={() => handleToggleActive(t)} disabled={deleting === t.teacher_id}
+                                className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                                style={{ backgroundColor: t.active === 0 ? 'rgba(46,125,50,0.08)' : 'rgba(255,235,238,1)', color: t.active === 0 ? '#2E7D32' : '#C62828' }}>
+                                {deleting === t.teacher_id ? '...' : (t.active === 0 ? 'Activate' : 'Deactivate')}
+                              </button>
+                              <button onClick={() => handleDelete(t.teacher_id)} disabled={deleting === t.teacher_id}
+                                className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ backgroundColor: '#FFEBEE', color: '#C62828' }}>
+                                {deleting === t.teacher_id ? '...' : 'Remove'}
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>
