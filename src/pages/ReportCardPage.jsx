@@ -129,37 +129,120 @@ export default function ReportCardPage() {
 
           {view === 'single' && (
             <>
-              <table className="w-full mb-6">
-                <thead>
-                  <tr style={{ backgroundColor: '#FAFAFA' }}>
-                    <th className="text-left px-4 py-3 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Learning Area</th>
-                    <th className="text-center px-4 py-3 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Average</th>
-                    <th className="text-center px-4 py-3 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Level</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Strand Summary</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.areas.map((a, i) => {
-                    const pct = parseFloat(a.avg_pct);
-                    const level = getLevel(pct);
-                    const ls = levelStyle(level);
-                    return (
-                      <tr key={a.area_id} style={{ borderBottom: i < report.areas.length - 1 ? '1px solid #F0F0F0' : 'none' }}>
-                        <td className="px-4 py-3 text-sm font-medium" style={{ color: '#333' }}>{a.area_name}</td>
-                        <td className="px-4 py-3 text-sm text-center" style={{ color: '#666' }}>{a.avg_pct}%</td>
-                        <td className="px-4 py-3 text-center">
-                          <span className="inline-flex px-2.5 py-0.5 rounded text-xs font-bold" style={{ backgroundColor: ls.bg, color: ls.text }}>
-                            {level}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-xs" style={{ color: '#888' }}>
-                          {a.strand_summary ? a.strand_summary.split(', ').map((s, j) => <div key={j}>{s}</div>) : '-'}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              {report.areas.map((a) => {
+                const hasStrands = a.strands && a.strands.length > 0 && a.strands.some(s => s.sub_strands && s.sub_strands.length > 0);
+                const hasSummative = a.summative && a.summative.length > 0;
+                const isEmpty = !hasStrands && !hasSummative;
+
+                return (
+                  <div key={a.area_id} className="mb-6">
+                    <h3 className="text-sm font-bold mb-2 px-1" style={{ color: '#7B4F9B', borderBottom: '2px solid #7B4F9B', paddingBottom: 4 }}>{a.area_name}</h3>
+
+                    {isEmpty && (
+                      <table className="w-full mb-2">
+                        <thead>
+                          <tr style={{ backgroundColor: '#FAFAFA' }}>
+                            <th className="text-left px-4 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Strand</th>
+                            <th className="text-left px-4 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Sub-strand</th>
+                            <th className="text-center px-4 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Mark</th>
+                            <th className="text-center px-4 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Competency Level</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="px-4 py-2 text-sm" style={{ color: '#999' }}>-</td>
+                            <td className="px-4 py-2 text-sm" style={{ color: '#999' }}>-</td>
+                            <td className="px-4 py-2 text-sm text-center" style={{ color: '#999' }}>-</td>
+                            <td className="px-4 py-2 text-sm text-center" style={{ color: '#999' }}>-</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    )}
+
+                    {hasStrands && (
+                      <table className="w-full mb-2">
+                        <thead>
+                          <tr style={{ backgroundColor: '#FAFAFA' }}>
+                            <th className="text-left px-4 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Strand</th>
+                            <th className="text-left px-4 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Sub-strand</th>
+                            <th className="text-center px-4 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Mark</th>
+                            <th className="text-center px-4 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Competency Level</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {a.strands.map((strand) =>
+                            (strand.sub_strands || []).length > 0
+                              ? strand.sub_strands.map((sub, si) => {
+                                  const ls = levelStyle(sub.performance_level);
+                                  return (
+                                    <tr key={`${strand.strand_id}-${si}`} style={{ borderBottom: '1px solid #F5F5F5' }}>
+                                      {si === 0 ? (
+                                        <td className="px-4 py-2 text-sm font-medium align-top" style={{ color: '#555', width: '20%' }}>{strand.strand_name}</td>
+                                      ) : (
+                                        <td className="px-4 py-2" />
+                                      )}
+                                      <td className="px-4 py-2 text-sm" style={{ color: '#333' }}>{sub.sub_strand_name || '-'}</td>
+                                      <td className="px-4 py-2 text-sm text-center" style={{ color: '#666' }}>{sub.formative_score || '-'}</td>
+                                      <td className="px-4 py-2 text-center">
+                                        {sub.performance_level ? (
+                                          <span className="inline-flex px-2.5 py-0.5 rounded text-xs font-bold" style={{ backgroundColor: ls.bg, color: ls.text }}>
+                                            {sub.performance_level}
+                                          </span>
+                                        ) : '-'}
+                                      </td>
+                                    </tr>
+                                  );
+                                })
+                              : (
+                                  <tr key={strand.strand_id} style={{ borderBottom: '1px solid #F5F5F5' }}>
+                                    <td className="px-4 py-2 text-sm font-medium" style={{ color: '#555', width: '20%' }}>{strand.strand_name}</td>
+                                    <td className="px-4 py-2 text-sm" style={{ color: '#999' }}>-</td>
+                                    <td className="px-4 py-2 text-sm text-center" style={{ color: '#999' }}>-</td>
+                                    <td className="px-4 py-2 text-center" style={{ color: '#999' }}>-</td>
+                                  </tr>
+                                )
+                          )}
+                        </tbody>
+                      </table>
+                    )}
+
+                    {hasSummative && (
+                      <div className="mt-2">
+                        <p className="text-xs font-semibold mb-1 px-1" style={{ color: '#888' }}>Summative (CAT / End-Term)</p>
+                        <table className="w-full">
+                          <thead>
+                            <tr style={{ backgroundColor: '#FAFAFA' }}>
+                              <th className="text-left px-4 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Exam</th>
+                              <th className="text-left px-4 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Sub-Area</th>
+                              <th className="text-center px-4 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Mark</th>
+                              <th className="text-center px-4 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Competency Level</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {a.summative.map((s, si) => {
+                              const ls = levelStyle(s.performance_level);
+                              return (
+                                <tr key={si} style={{ borderBottom: '1px solid #F5F5F5' }}>
+                                  <td className="px-4 py-2 text-sm" style={{ color: '#333' }}>{s.exam_type}{s.exam_name ? ` - ${s.exam_name}` : ''}</td>
+                                  <td className="px-4 py-2 text-sm" style={{ color: '#666' }}>{s.sub_area_name || '-'}</td>
+                                  <td className="px-4 py-2 text-sm text-center" style={{ color: '#666' }}>{s.summative_score || '-'}</td>
+                                  <td className="px-4 py-2 text-center">
+                                    {s.performance_level ? (
+                                      <span className="inline-flex px-2.5 py-0.5 rounded text-xs font-bold" style={{ backgroundColor: ls.bg, color: ls.text }}>
+                                        {s.performance_level}
+                                      </span>
+                                    ) : '-'}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
 
               <div className="grid grid-cols-2 gap-4 text-sm border-t pt-4" style={{ borderColor: '#F0F0F0' }}>
                 <div>
