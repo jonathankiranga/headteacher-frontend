@@ -36,6 +36,7 @@ function AppLayout() {
         <Route path="/fees" element={<FeesPage />} />
         <Route path="/analytics" element={<AttendanceAnalytics />} />
         <Route path="/exams" element={<ExamsPage />} />
+        <Route path="/exams/report" element={<ReportCardPage />} />
         <Route path="/exams/report/:studentId" element={<ReportCardPage />} />
         <Route path="/exams/report/:studentId/:term" element={<ReportCardPage />} />
         <Route path="/lesson-plans" element={<LessonPlansPage />} />

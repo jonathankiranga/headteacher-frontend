@@ -7,6 +7,7 @@ export default function ReportCardPage() {
   const navigate = useNavigate();
   const { studentId, term: urlTerm } = useParams();
   const schoolId = sessionStorage.getItem('school_id');
+  const teacherId = sessionStorage.getItem('teacher_id');
   const [report, setReport] = useState(null);
   const [cumulative, setCumulative] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,12 +18,30 @@ export default function ReportCardPage() {
   const terms = ['Term 1', 'Term 2', 'Term 3'];
   const currentTerm = `Term ${Math.ceil((new Date().getMonth() + 1) / 4)}`;
 
+  // Student picker state (shown when no studentId in URL)
+  const [pickerStudents, setPickerStudents] = useState([]);
+  const [pickerLoading, setPickerLoading] = useState(true);
+  const [pickerSearch, setPickerSearch] = useState('');
+
   useEffect(() => {
     setSelectedTerm(urlTerm || currentTerm);
   }, [urlTerm]);
 
+  // Load student list when no studentId (picker mode)
   useEffect(() => {
-    if (!studentId) return;
+    if (studentId) return;
+    setPickerLoading(true);
+    const teacherId = sessionStorage.getItem('teacher_id');
+    if (!teacherId) { setPickerLoading(false); return; }
+    api.get(`/api/attendance/students/${teacherId}`)
+      .then(d => setPickerStudents(d.students || []))
+      .catch(() => {})
+      .finally(() => setPickerLoading(false));
+  }, [studentId]);
+
+  // Load report when studentId is present
+  useEffect(() => {
+    if (!studentId) { setLoading(false); return; }
     setLoading(true);
 
     Promise.all([
@@ -52,6 +71,62 @@ export default function ReportCardPage() {
       BE: { bg: '#FFEBEE', text: '#C62828' }
     };
     return map[level] || { bg: '#F5F5F5', text: '#888' };
+  }
+
+  // Student picker: shown when no studentId in URL
+  if (!studentId) {
+    const filtered = pickerStudents.filter(s =>
+      (s.full_name || '').toLowerCase().includes(pickerSearch.toLowerCase()) ||
+      (s.class_name || '').toLowerCase().includes(pickerSearch.toLowerCase())
+    );
+    return (
+      <div style={{ backgroundColor: '#F8F8F8', minHeight: '100vh', paddingBottom: 70 }}>
+        <div className="navbar px-4 py-3">
+          <div className="max-w-3xl mx-auto flex items-center justify-between">
+            <button onClick={() => navigate('/home')} className="btn-ghost text-sm">← Home</button>
+            <h1 className="text-sm font-semibold" style={{ color: '#333' }}>Select Student</h1>
+            <div style={{ width: 60 }} />
+          </div>
+        </div>
+        <div className="max-w-3xl mx-auto px-4 py-6">
+          <div className="card p-4 mb-4">
+            <input
+              type="text"
+              placeholder="Search by name or class..."
+              value={pickerSearch}
+              onChange={e => setPickerSearch(e.target.value)}
+              className="w-full text-sm px-3 py-2 rounded-lg border"
+              style={{ borderColor: '#E0E0E0', outline: 'none' }}
+            />
+          </div>
+          {pickerLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#7B4F9B', borderTopColor: 'transparent' }} />
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-12" style={{ color: '#888' }}>No students found</div>
+          ) : (
+            <div className="space-y-2">
+              {filtered.map(s => (
+                <button key={s.student_id} onClick={() => navigate(`/exams/report/${s.student_id}`)}
+                  className="w-full card flex items-center gap-3 p-4 text-left hover:shadow-md transition-shadow"
+                  style={{ cursor: 'pointer', border: 'none' }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: '50%',
+                    backgroundColor: '#7B4F9B', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontSize: 16, fontWeight: 700, flexShrink: 0,
+                  }}>{(s.full_name || '?')[0]}</div>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="text-sm font-semibold" style={{ color: '#333' }}>{s.full_name}</div>
+                    <div className="text-xs" style={{ color: '#888' }}>{s.class_name || '—'}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
   }
 
   if (loading) return (
