@@ -187,17 +187,57 @@ export default function PromotionPage() {
           </div>
         )}
 
-        {/* End of Year Close */}
+        {/* End of Year Close — automatic when status is known, manual fallback otherwise */}
         <div className="card p-6 mb-5" style={{ borderColor: '#7B4F9B', borderWidth: 1 }}>
           <h2 className="text-base font-bold mb-1" style={{ color: '#333' }}>🎓 End of Year Close</h2>
           <p className="text-xs mb-4" style={{ color: '#888' }}>
-            Moves every active student up one class level (PP1→PP2→Grade 1…Grade 9). Same stream is kept when available.
-            Students in the highest level graduate. All moves are recorded in promotion history.
+            Moves every active student up one class level (PP1→PP2→Grade 1…Grade 9).
+            Same stream is kept where available. Students at the top level graduate.
           </p>
-          <div className="flex gap-2 items-end">
-            <div className="flex-1">
-              <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Closing Academic Year</label>
-              <input type="number" value={closeYear} onChange={e => setCloseYear(e.target.value)} className="input-field" />
+
+          {/* AUTO: year pre-filled from status — show clear one-click action */}
+          {yearEndStatus?.needs_close ? (
+            <div>
+              <div className="flex items-center justify-between p-3 rounded-lg mb-3"
+                style={{ backgroundColor: '#FFF8E7', border: '1px solid #F9A825' }}>
+                <div>
+                  <p className="text-sm font-bold" style={{ color: '#B8860B' }}>
+                    Academic Year {yearEndStatus.year} — Not yet closed
+                  </p>
+                  <p className="text-xs" style={{ color: '#888', marginTop: 2 }}>
+                    {yearEndStatus.last_term_ended
+                      ? `Term 3 ended ${new Date(yearEndStatus.last_term_ended).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                      : 'End of year detected'
+                    }
+                  </p>
+                </div>
+              </div>
+              <button onClick={handleYearEndClose} disabled={closing}
+                className="btn-primary" style={{ backgroundColor: '#F9A825' }}>
+                {closing ? 'Running…' : `Run Year-End Close for ${yearEndStatus.year}`}
+              </button>
+            </div>
+          ) : yearEndStatus?.already_run ? (
+            <div className="p-3 rounded-lg" style={{ backgroundColor: '#E8F5E9', border: '1px solid #A5D6A7' }}>
+              <p className="text-sm font-semibold" style={{ color: '#2E7D32' }}>
+                ✓ Already completed for {yearEndStatus.year}
+              </p>
+              <p className="text-xs mt-1" style={{ color: '#555' }}>
+                Use the manual section below to move individual students if needed.
+              </p>
+            </div>
+          ) : (
+            /* FALLBACK: no term data — allow manual year selection */
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Closing Academic Year</label>
+                <input type="number" value={closeYear} onChange={e => setCloseYear(e.target.value)} className="input-field" />
+              </div>
+              <button onClick={handleYearEndClose} disabled={closing} className="btn-primary whitespace-nowrap">
+                {closing ? 'Processing...' : 'Run Year-End Close'}
+              </button>
+            </div>
+          )}
             </div>
             <button onClick={handleYearEndClose} disabled={closing} className="btn-primary whitespace-nowrap">
               {closing ? 'Processing...' : 'Run Year-End Close'}
