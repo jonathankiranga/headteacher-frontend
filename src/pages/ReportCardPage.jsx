@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getStudentReport } from '../utils/api.js';
+import { getStudentReport, getClasses } from '../utils/api.js';
 import api from '../utils/api.js';
 
 export default function ReportCardPage() {
@@ -32,12 +32,13 @@ export default function ReportCardPage() {
   // Load classes when no studentId (picker mode)
   useEffect(() => {
     if (studentId) return;
+    if (!schoolId) { navigate('/teacher/login', { replace: true }); return; }
     setPickerLoading(true);
-    const sid = sessionStorage.getItem('school_id');
-    if (!sid) { setPickerLoading(false); return; }
-    api.get('/api/fees/classes', { params: { school_id: sid } })
-      .then(d => setPickerClasses((d.classes || []).sort((a, b) => (a.class_rank || 0) - (b.class_rank || 0))))
-      .catch(() => {})
+    getClasses(schoolId)
+      .then(d => {
+        setPickerClasses((d.classes || []).sort((a, b) => (a.class_rank || 0) - (b.class_rank || 0)));
+      })
+      .catch(e => { console.error('[ReportCard] Failed to load classes:', e); })
       .finally(() => setPickerLoading(false));
   }, [studentId]);
 
