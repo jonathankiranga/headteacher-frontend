@@ -9,7 +9,6 @@ function fmtDate(raw) {
   // Parse as local date to avoid UTC midnight shifting the day
   let date;
   if (typeof raw === 'string') {
-    // Take first 10 chars (YYYY-MM-DD) in case full ISO timestamp is provided
     const dateStr = raw.substring(0, 10);
     const parts = dateStr.split('-');
     if (parts.length === 3) {
@@ -21,6 +20,8 @@ function fmtDate(raw) {
   }
   return raw || '—';
 }
+
+function Bar({ label, counts, max }) {
   if (!max) return null;
   return (
     <div className="flex items-center gap-2 mb-1">
