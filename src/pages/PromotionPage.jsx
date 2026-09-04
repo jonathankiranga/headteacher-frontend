@@ -238,11 +238,6 @@ export default function PromotionPage() {
               </button>
             </div>
           )}
-            </div>
-            <button onClick={handleYearEndClose} disabled={closing} className="btn-primary whitespace-nowrap">
-              {closing ? 'Processing...' : 'Run Year-End Close'}
-            </button>
-          </div>
           {closeResult && !closeResult.error && (
             <div className="text-sm mt-3 p-3 rounded" style={{ backgroundColor: '#E8F5E9', color: '#2E7D32' }}>
               <p className="font-semibold mb-1">✓ Done: {closeResult.promoted} promoted, {closeResult.graduated} graduated across {closeResult.levels} levels.</p>
