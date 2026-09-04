@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchStudents, getLearningAreas, getExamSessions, createExamSession, updateExamSessionStatus, deleteExamSession, getLearningAreasWithSubAreas, createSubLearningArea, deleteSubLearningArea, getClasses } from '../utils/api.js';
+import api from '../utils/api.js';
 
 export default function CATManagementPage() {
   const navigate = useNavigate();
@@ -22,8 +23,12 @@ export default function CATManagementPage() {
   const [msg, setMsg] = useState('');
 
   // New sub-area form
-  const [subForm, setSubForm] = useState({ area_id: '', sub_area_name: '' });
+  const [subForm, setSubForm] = useState({ area_id: '', sub_area_name: '', display_order: '' });
   const [creatingSub, setCreatingSub] = useState(false);
+  // Inline editing state
+  const [editingSubId, setEditingSubId] = useState(null);
+  const [editSubName, setEditSubName] = useState('');
+  const [editSubOrder, setEditSubOrder] = useState('');
 
   useEffect(() => {
     if (role !== 'head') { navigate('/home', { replace: true }); return; }
@@ -92,20 +97,43 @@ export default function CATManagementPage() {
     if (!subForm.area_id || !subForm.sub_area_name) return;
     setCreatingSub(true);
     try {
-      await createSubLearningArea(subForm);
-      setSubForm({ area_id: '', sub_area_name: '' });
+      await createSubLearningArea({
+        area_id: subForm.area_id,
+        sub_area_name: subForm.sub_area_name,
+        display_order: subForm.display_order ? parseInt(subForm.display_order) : 0
+      });
+      setSubForm({ area_id: subForm.area_id, sub_area_name: '', display_order: '' });
       loadSubAreas();
-      setMsg('Sub-learning area created');
+      setMsg('Sub-learning area added');
     } catch (err) { setMsg('Failed: ' + err.message); }
     setCreatingSub(false);
   };
 
   const handleDeleteSubArea = async (id) => {
-    if (!window.confirm('Delete this sub-learning area?')) return;
+    if (!window.confirm('Delete this sub-learning area? This will also remove any exam results recorded against it.')) return;
     try {
       await deleteSubLearningArea(id);
       loadSubAreas();
     } catch (err) { alert(err.message); }
+  };
+
+  const startEditSub = (sa) => {
+    setEditingSubId(sa.sub_area_id);
+    setEditSubName(sa.sub_area_name);
+    setEditSubOrder(sa.display_order ?? '');
+  };
+
+  const handleSaveEditSub = async (id) => {
+    if (!editSubName.trim()) return;
+    try {
+      await api.put(`/api/exam-sessions/sub-learning-areas/${id}`, {
+        sub_area_name: editSubName.trim(),
+        display_order: editSubOrder !== '' ? parseInt(editSubOrder) : undefined
+      });
+      setEditingSubId(null);
+      loadSubAreas();
+      setMsg('Sub-area updated');
+    } catch (err) { setMsg('Failed: ' + err.message); }
   };
 
   return (
@@ -199,35 +227,91 @@ export default function CATManagementPage() {
 
         {/* ─── Sub-Learning Areas ─── */}
         <div className="card p-4">
-          <h2 className="font-bold text-sm mb-3" style={{ color: '#1a1a6c' }}>Sub-Learning Areas</h2>
-          <p className="text-xs mb-3" style={{ color: '#888' }}>Sub-learning areas break a subject into assessable parts (e.g. English = Language, Composition, Reading).</p>
+          <h2 className="font-bold text-sm mb-1" style={{ color: '#1a1a6c' }}>Sub-Learning Areas</h2>
+          <p className="text-xs mb-3" style={{ color: '#888' }}>
+            Break each subject into assessable parts (e.g. English → Language, Composition, Reading).
+            Use "Order" to control how sub-areas appear in the score entry table.
+          </p>
 
-          <form onSubmit={handleCreateSubArea} className="flex gap-2 mb-4">
-            <select value={subForm.area_id} onChange={e => setSubForm({ ...subForm, area_id: e.target.value })} className="input-field text-sm flex-1" required>
-              <option value="">Select Learning Area</option>
+          {/* Add form */}
+          <form onSubmit={handleCreateSubArea} className="flex gap-2 mb-5 flex-wrap">
+            <select value={subForm.area_id} onChange={e => setSubForm({ ...subForm, area_id: e.target.value })}
+              className="input-field text-sm" style={{ flex: '1 1 140px', minWidth: 0 }} required>
+              <option value="">Select Subject</option>
               {areas.map(a => <option key={a.area_id} value={a.area_id}>{a.area_name}</option>)}
             </select>
-            <input type="text" value={subForm.sub_area_name} onChange={e => setSubForm({ ...subForm, sub_area_name: e.target.value })} className="input-field text-sm flex-1" placeholder="e.g. Language" required />
-            <button type="submit" disabled={creatingSub} className="btn-primary !w-auto px-4 !py-1 !text-xs">{creatingSub ? '...' : 'Add'}</button>
+            <input type="text" value={subForm.sub_area_name} onChange={e => setSubForm({ ...subForm, sub_area_name: e.target.value })}
+              className="input-field text-sm" style={{ flex: '2 1 160px', minWidth: 0 }} placeholder="Sub-area name (e.g. Language)" required />
+            <input type="number" min="0" value={subForm.display_order} onChange={e => setSubForm({ ...subForm, display_order: e.target.value })}
+              className="input-field text-sm" style={{ flex: '0 0 72px' }} placeholder="Order" title="Display order (lower = first)" />
+            <button type="submit" disabled={creatingSub}
+              className="btn-primary !w-auto px-4 !py-2 !text-sm" style={{ flexShrink: 0 }}>
+              {creatingSub ? '...' : '+ Add'}
+            </button>
           </form>
 
-          {areas.length > 0 ? areas.map(area => {
-            const areaSubs = subAreas.filter(sa => sa.area_id === area.area_id);
-            if (areaSubs.length === 0) return null;
+          {/* List grouped by area */}
+          {areas.length === 0 ? (
+            <p className="text-xs" style={{ color: '#888' }}>No learning areas configured yet.</p>
+          ) : areas.map(area => {
+            const areaSubs = [...subAreas.filter(sa => sa.area_id === area.area_id)]
+              .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
             return (
-              <div key={area.area_id} className="mb-3">
-                <h3 className="text-sm font-bold mb-1" style={{ color: '#1a1a6c' }}>{area.area_name}</h3>
-                <div className="flex flex-wrap gap-2">
-                  {areaSubs.map(sa => (
-                    <span key={sa.sub_area_id} className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded" style={{ border: '1px solid #E0E0E0', background: '#fff' }}>
-                      {sa.sub_area_name}
-                      <button onClick={() => handleDeleteSubArea(sa.sub_area_id)} className="text-red-500 hover:text-red-700" style={{ lineHeight: 1 }}>×</button>
-                    </span>
-                  ))}
-                </div>
+              <div key={area.area_id} className="mb-4">
+                <h3 className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: '#7B4F9B' }}>
+                  {area.area_name}
+                  <span className="ml-2 font-normal text-gray-400">({areaSubs.length} sub-area{areaSubs.length !== 1 ? 's' : ''})</span>
+                </h3>
+                {areaSubs.length === 0 ? (
+                  <p className="text-xs" style={{ color: '#bbb' }}>No sub-areas yet.</p>
+                ) : (
+                  <div className="space-y-1">
+                    {areaSubs.map(sa => (
+                      <div key={sa.sub_area_id} className="flex items-center gap-2 p-2 rounded-lg"
+                        style={{ border: '1px solid #EEEEEE', backgroundColor: '#FAFAFA' }}>
+                        {editingSubId === sa.sub_area_id ? (
+                          <>
+                            <input
+                              type="text" value={editSubName} onChange={e => setEditSubName(e.target.value)}
+                              className="input-field text-sm" style={{ flex: 1, padding: '4px 8px' }}
+                              autoFocus onKeyDown={e => { if (e.key === 'Enter') handleSaveEditSub(sa.sub_area_id); if (e.key === 'Escape') setEditingSubId(null); }}
+                            />
+                            <input
+                              type="number" min="0" value={editSubOrder} onChange={e => setEditSubOrder(e.target.value)}
+                              className="input-field text-sm" style={{ width: 64, padding: '4px 6px' }} placeholder="Order"
+                            />
+                            <button onClick={() => handleSaveEditSub(sa.sub_area_id)}
+                              style={{ padding: '4px 10px', borderRadius: 6, border: 'none', backgroundColor: '#7B4F9B', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                              Save
+                            </button>
+                            <button onClick={() => setEditingSubId(null)}
+                              style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #DDD', backgroundColor: '#fff', color: '#666', fontSize: 12, cursor: 'pointer' }}>
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span style={{ fontSize: 12, color: '#444', flex: 1 }}>{sa.sub_area_name}</span>
+                            {sa.display_order != null && (
+                              <span style={{ fontSize: 10, color: '#BBB', minWidth: 40 }}>#{sa.display_order}</span>
+                            )}
+                            <button onClick={() => startEditSub(sa)}
+                              style={{ padding: '3px 10px', borderRadius: 6, border: '1px solid #DDD', backgroundColor: '#fff', color: '#555', fontSize: 11, cursor: 'pointer' }}>
+                              Edit
+                            </button>
+                            <button onClick={() => handleDeleteSubArea(sa.sub_area_id)}
+                              style={{ padding: '3px 10px', borderRadius: 6, border: '1px solid #FFCDD2', backgroundColor: '#FFF5F5', color: '#C62828', fontSize: 11, cursor: 'pointer' }}>
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
-          }) : <p className="text-xs" style={{ color: '#888' }}>No learning areas configured. Add them first.</p>}
+          })}
         </div>
 
         {msg && (
