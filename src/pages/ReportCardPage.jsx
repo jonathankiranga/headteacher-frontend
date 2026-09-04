@@ -129,7 +129,7 @@ export default function ReportCardPage() {
 
           {view === 'single' && (
             <>
-              {report.areas.map((a) => {
+              {(report.areas || []).map((a) => {
                 const hasStrands = a.strands && a.strands.length > 0 && a.strands.some(s => s.sub_strands && s.sub_strands.length > 0);
                 const hasSummative = a.summative && a.summative.length > 0;
                 const isEmpty = !hasStrands && !hasSummative;
