@@ -73,56 +73,70 @@ export default function ReportCardPage() {
     return map[level] || { bg: '#F5F5F5', text: '#888' };
   }
 
-  // Student picker: shown when no studentId in URL
+  // Student picker: grouped by class, shown when no studentId in URL
   if (!studentId) {
+    const search = pickerSearch.toLowerCase();
     const filtered = pickerStudents.filter(s =>
-      (s.full_name || '').toLowerCase().includes(pickerSearch.toLowerCase()) ||
-      (s.class_name || '').toLowerCase().includes(pickerSearch.toLowerCase())
+      (s.full_name || '').toLowerCase().includes(search) ||
+      (s.class_name || '').toLowerCase().includes(search)
     );
+    const byClass = {};
+    filtered.forEach(s => {
+      const cls = s.class_name || 'Unassigned';
+      if (!byClass[cls]) byClass[cls] = [];
+      byClass[cls].push(s);
+    });
+    const classNames = Object.keys(byClass).sort();
     return (
       <div style={{ backgroundColor: '#F8F8F8', minHeight: '100vh', paddingBottom: 70 }}>
         <div className="navbar px-4 py-3">
           <div className="max-w-3xl mx-auto flex items-center justify-between">
             <button onClick={() => navigate('/home')} className="btn-ghost text-sm">← Home</button>
-            <h1 className="text-sm font-semibold" style={{ color: '#333' }}>Select Student</h1>
+            <h1 className="text-sm font-semibold" style={{ color: '#333' }}>Report Cards</h1>
             <div style={{ width: 60 }} />
           </div>
         </div>
         <div className="max-w-3xl mx-auto px-4 py-6">
-          <div className="card p-4 mb-4">
-            <input
-              type="text"
-              placeholder="Search by name or class..."
-              value={pickerSearch}
-              onChange={e => setPickerSearch(e.target.value)}
-              className="w-full text-sm px-3 py-2 rounded-lg border"
-              style={{ borderColor: '#E0E0E0', outline: 'none' }}
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="Search student name..."
+            value={pickerSearch}
+            onChange={e => setPickerSearch(e.target.value)}
+            className="w-full text-sm px-4 py-2.5 rounded-lg mb-4"
+            style={{ border: '1px solid #E0E0E0', outline: 'none', backgroundColor: '#fff' }}
+          />
           {pickerLoading ? (
             <div className="flex justify-center py-12">
               <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#7B4F9B', borderTopColor: 'transparent' }} />
             </div>
-          ) : filtered.length === 0 ? (
+          ) : classNames.length === 0 ? (
             <div className="text-center py-12" style={{ color: '#888' }}>No students found</div>
           ) : (
-            <div className="space-y-2">
-              {filtered.map(s => (
-                <button key={s.student_id} onClick={() => navigate(`/exams/report/${s.student_id}`)}
-                  className="w-full card flex items-center gap-3 p-4 text-left hover:shadow-md transition-shadow"
-                  style={{ cursor: 'pointer', border: 'none' }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: '50%',
-                    backgroundColor: '#7B4F9B', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontSize: 16, fontWeight: 700, flexShrink: 0,
-                  }}>{(s.full_name || '?')[0]}</div>
-                  <div style={{ minWidth: 0 }}>
-                    <div className="text-sm font-semibold" style={{ color: '#333' }}>{s.full_name}</div>
-                    <div className="text-xs" style={{ color: '#888' }}>{s.class_name || '—'}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
+            classNames.map(cls => (
+              <div key={cls} className="mb-5">
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <span className="text-xs font-bold uppercase tracking-wide" style={{ color: '#7B4F9B' }}>{cls}</span>
+                  <span className="text-xs" style={{ color: '#aaa' }}>({byClass[cls].length})</span>
+                  <div className="flex-1" style={{ borderBottom: '1px solid #E8E0F0' }} />
+                </div>
+                <div className="space-y-1.5">
+                  {byClass[cls].map(s => (
+                    <button key={s.student_id} onClick={() => navigate(`/exams/report/${s.student_id}`)}
+                      className="w-full flex items-center gap-3 p-3 text-left rounded-lg transition-all"
+                      style={{ backgroundColor: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
+                      onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(123,79,155,0.12)'}
+                      onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)'}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: '50%',
+                        backgroundColor: '#F0E6F6', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#7B4F9B', fontSize: 14, fontWeight: 700, flexShrink: 0,
+                      }}>{(s.full_name || '?')[0]}</div>
+                      <div className="text-sm font-medium" style={{ color: '#333' }}>{s.full_name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>
