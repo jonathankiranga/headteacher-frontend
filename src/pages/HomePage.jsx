@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PushManager from '../components/PushManager.jsx';
+import YearEndBanner from '../components/YearEndBanner.jsx';
 
 const allModules = [
   { id: 'attendance', label: 'Attendance', icon: '📋', desc: 'Mark and track daily student attendance', color: '#7B4F9B', route: '/teacher/attendance', roles: ['teacher', 'head'] },
@@ -21,6 +22,7 @@ const allModules = [
 export default function HomePage() {
   const navigate = useNavigate();
   const teacherId = sessionStorage.getItem('teacher_id');
+  const schoolId  = sessionStorage.getItem('school_id');
   const role = sessionStorage.getItem('role') || 'teacher';
 
   useEffect(() => {
@@ -67,6 +69,9 @@ export default function HomePage() {
             }}>Logout</button>
         </div>
       </div>
+
+      {/* Year-end close reminder — head only */}
+      {role === 'head' && <YearEndBanner schoolId={schoolId} />}
 
       {/* Tools Grid */}
       <div style={{ maxWidth: 680, margin: '16px auto 0', padding: '0 12px' }}>

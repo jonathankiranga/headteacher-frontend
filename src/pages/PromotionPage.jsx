@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../utils/api.js';
+import { getYearEndStatus } from '../utils/api.js';
 
 export default function PromotionPage() {
   const navigate = useNavigate();
@@ -18,6 +19,16 @@ export default function PromotionPage() {
   const [closeYear, setCloseYear] = useState(new Date().getFullYear());
   const [closing, setClosing] = useState(false);
   const [closeResult, setCloseResult] = useState(null);
+  const [yearEndStatus, setYearEndStatus] = useState(null);
+
+  // Load year-end status to pre-fill the closing year and show context
+  useEffect(() => {
+    if (!schoolId) return;
+    getYearEndStatus(schoolId).then(s => {
+      setYearEndStatus(s);
+      if (s?.needs_close && s.year) setCloseYear(s.year);
+    }).catch(() => {});
+  }, [schoolId]);
 
   async function handleYearEndClose() {
     if (!window.confirm(
@@ -28,6 +39,9 @@ export default function PromotionPage() {
     try {
       const r = await api.post(`/api/school-head/${schoolId}/academic-year/close`, { from_year: closeYear });
       setCloseResult(r.data);
+      // Clear the session banner dismiss flag so the banner won't re-show
+      // (year-end is now done, backend will return needs_close: false)
+      sessionStorage.removeItem('yearEndBannerDismissed');
     } catch (err) {
       setCloseResult({ error: err.response?.data?.error || 'Year-end close failed' });
     }
@@ -148,6 +162,31 @@ export default function PromotionPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6">
+        {/* Year-end status context */}
+        {yearEndStatus?.needs_close && (
+          <div className="card p-4 mb-4" style={{ borderLeft: '4px solid #F9A825', backgroundColor: '#FFFDE7' }}>
+            <p className="text-sm font-semibold" style={{ color: '#B8860B' }}>
+              🎓 Year-End Close required for {yearEndStatus.year}
+            </p>
+            <p className="text-xs mt-1" style={{ color: '#666' }}>
+              Term 3 ended on {yearEndStatus.last_term_ended
+                ? new Date(yearEndStatus.last_term_ended).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                : ''}.
+              Students are still in their {yearEndStatus.year} classes. Use the form below to move them all up in one step.
+            </p>
+          </div>
+        )}
+        {yearEndStatus?.already_run && (
+          <div className="card p-4 mb-4" style={{ borderLeft: '4px solid #2E7D32', backgroundColor: '#E8F5E9' }}>
+            <p className="text-sm font-semibold" style={{ color: '#2E7D32' }}>
+              ✓ Year-End Close already completed for {yearEndStatus.year}
+            </p>
+            <p className="text-xs mt-1" style={{ color: '#555' }}>
+              Use the manual promotion section below if you need to move individual students.
+            </p>
+          </div>
+        )}
+
         {/* End of Year Close */}
         <div className="card p-6 mb-5" style={{ borderColor: '#7B4F9B', borderWidth: 1 }}>
           <h2 className="text-base font-bold mb-1" style={{ color: '#333' }}>🎓 End of Year Close</h2>
@@ -166,7 +205,13 @@ export default function PromotionPage() {
           </div>
           {closeResult && !closeResult.error && (
             <div className="text-sm mt-3 p-3 rounded" style={{ backgroundColor: '#E8F5E9', color: '#2E7D32' }}>
-              Done: {closeResult.promoted} promoted, {closeResult.graduated} graduated across {closeResult.levels} levels.
+              <p className="font-semibold mb-1">✓ Done: {closeResult.promoted} promoted, {closeResult.graduated} graduated across {closeResult.levels} levels.</p>
+              <p style={{ color: '#555', marginTop: 6, fontSize: 12, lineHeight: 1.6 }}>
+                <strong>Next steps:</strong><br />
+                1. Go to <strong>School Terms</strong> and add next year's term dates.<br />
+                2. Remind teachers to <strong>refresh the app</strong> — their class rosters will now show the promoted students.<br />
+                3. Teachers should not mark attendance in old classes for students who have moved.
+              </p>
             </div>
           )}
           {closeResult?.error && (

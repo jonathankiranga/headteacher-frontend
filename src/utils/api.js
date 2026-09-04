@@ -342,4 +342,9 @@ export async function deleteSchoolTerm(schoolId, termId) {
   return data;
 }
 
+export async function getYearEndStatus(schoolId) {
+  const { data } = await api.get(`/api/school-head/${schoolId}/year-end-status`);
+  return data; // { needs_close, year, last_term_ended, already_run }
+}
+
 export default api;
