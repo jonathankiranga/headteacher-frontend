@@ -320,4 +320,26 @@ export async function getStrandPerformance(schoolId, classId, term, year) {
   return data;
 }
 
+// ─── School Terms ─────────────────────────────────────────────────────────────
+
+export async function getSchoolTerms(schoolId) {
+  const { data } = await api.get(`/api/school-head/${schoolId}/terms`);
+  return data; // { terms: [...] }
+}
+
+export async function createSchoolTerm(schoolId, term) {
+  const { data } = await api.post(`/api/school-head/${schoolId}/terms`, term);
+  return data;
+}
+
+export async function updateSchoolTerm(schoolId, termId, updates) {
+  const { data } = await api.put(`/api/school-head/${schoolId}/terms/${termId}`, updates);
+  return data;
+}
+
+export async function deleteSchoolTerm(schoolId, termId) {
+  const { data } = await api.delete(`/api/school-head/${schoolId}/terms/${termId}`);
+  return data;
+}
+
 export default api;

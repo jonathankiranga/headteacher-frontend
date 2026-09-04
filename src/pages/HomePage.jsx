@@ -14,6 +14,7 @@ const allModules = [
   { id: 'competency-ratings', label: 'Competency', icon: '⭐', desc: 'Rate core competencies and values', color: '#7B4F9B', route: '/competency-ratings', roles: ['teacher', 'head'] },
   { id: 'level-distribution', label: 'Level Distribution', icon: '📊', desc: 'EE/ME/AE/BE across classes', color: '#1565C0', route: '/level-distribution', roles: ['teacher', 'head'] },
   { id: 'strand-performance', label: 'Strand Performance', icon: '🧬', desc: 'Strand & sub-strand performance', color: '#6A1B9A', route: '/strand-performance', roles: ['teacher', 'head'] },
+  { id: 'school-terms', label: 'School Terms', icon: '📅', desc: 'Set term dates for subscriptions & reports', color: '#0277BD', route: '/school-terms', roles: ['head'] },
   { id: 'help', label: 'Help & Support', icon: '❓', desc: 'Get help and contact support', color: '#6B7280', route: '/help', roles: ['teacher', 'head'] },
 ];
 
