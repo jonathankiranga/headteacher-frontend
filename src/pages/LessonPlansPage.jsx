@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchStudents, getLearningAreas, getStrands, getSubStrands, getLessonPlans, createLessonPlan, updateLessonPlan, deleteLessonPlan, getClasses } from '../utils/api.js';
+import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
 function toDateInput(value) {
   if (!value) return '';
@@ -206,6 +207,7 @@ export default function LessonPlansPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     if (!teacherId) navigate('/teacher/login', { replace: true });
@@ -251,7 +253,10 @@ export default function LessonPlansPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate('/home')} className="btn-ghost text-sm">← Back</button>
           <h1 className="text-base font-bold" style={{ color: '#333' }}>Lesson Plans</h1>
-          <button onClick={() => { setEditingPlan(null); setShowModal(true); }} className="btn-secondary text-sm">+ New</button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowHelp(true)} className="btn-ghost text-sm" aria-label="Help">❓</button>
+            <button onClick={() => { setEditingPlan(null); setShowModal(true); }} className="btn-secondary text-sm">+ New</button>
+          </div>
         </div>
       </div>
 
@@ -317,6 +322,33 @@ export default function LessonPlansPage() {
           onSaved={loadPlans}
         />
       )}
+
+      <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="Lesson Plans — Help">
+        <HelpSection icon="📖" title="What is this screen?">
+          Lesson Plans is a digital planning tool for teachers. It lets you prepare and
+          document what you intend to teach — linked directly to the CBC curriculum
+          structure (Learning Area → Strand → Sub-strand). Plans are stored per class and
+          per term so you can review what was taught throughout the year.
+        </HelpSection>
+        <HelpSection icon="➕" title="Creating a lesson plan">
+          <HelpStep n={1}>Tap <strong>+ New</strong> in the top bar.</HelpStep>
+          <HelpStep n={2}>Select the <strong>Class</strong> and <strong>Term</strong>.</HelpStep>
+          <HelpStep n={3}>Pick the <strong>Learning Area</strong>, then drill down to a <strong>Strand</strong> and <strong>Sub-strand</strong> if applicable.</HelpStep>
+          <HelpStep n={4}>Set the <strong>Week</strong> number, <strong>Duration</strong>, and lesson date.</HelpStep>
+          <HelpStep n={5}>Fill in <strong>Learning Objectives</strong>, <strong>Resources</strong>, <strong>Activities</strong>, and <strong>Assessment Method</strong>.</HelpStep>
+          <HelpStep n={6}>Tap <strong>Save</strong>.</HelpStep>
+        </HelpSection>
+        <HelpSection icon="🎒" title="How it relates to students">
+          Lesson plans are linked to a class, so they cover all students in that class.
+          They provide the teaching context for the CAT scores recorded in the Exams
+          screen — the same Learning Area and Strand structure is shared.
+        </HelpSection>
+        <HelpSection icon="📋" title="Filtering plans">
+          Use the <strong>Class</strong> and <strong>Term</strong> dropdowns at the top to
+          filter plans. This is useful for reviewing a full term's teaching sequence.
+        </HelpSection>
+        <HelpTip>Lesson plans are for the teacher's own records and school inspections — they are not shown to students or parents.</HelpTip>
+      </HelpPanel>
     </div>
   );
 }

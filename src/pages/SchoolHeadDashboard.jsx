@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { fetchTeachers, addTeacher, deleteTeacher, setTeacherActive, getAssignments, updateAssignments } from '../utils/api.js';
+import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
 function BroadcastModal({ schoolId, onClose }) {
   const [message, setMessage] = useState('');
@@ -260,6 +261,7 @@ export default function SchoolHeadDashboard() {
   const [allClasses, setAllClasses] = useState([]);
   const [deleting, setDeleting] = useState(null);
   const [premiumWarning, setPremiumWarning] = useState('');
+  const [showHelp, setShowHelp] = useState(false);
 
   // Check premium payment status
   useEffect(() => {
@@ -332,6 +334,7 @@ export default function SchoolHeadDashboard() {
               <button onClick={() => setShowBroadcast(true)} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(255,179,0,0.12)', color: '#B8860B' }}>Broadcast</button>
               <button onClick={() => navigate('/analytics')} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(123,79,155,0.08)', color: '#7B4F9B' }}>Analytics</button>
               <button onClick={() => setShowCsv(true)} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(46,125,50,0.08)', color: '#2E7D32' }}>CSV</button>
+              <button onClick={() => setShowHelp(true)} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(123,79,155,0.08)', color: '#7B4F9B' }} aria-label="Help">❓ Help</button>
               <button onClick={() => setShowModal(true)} className="btn-secondary text-sm">+ Teacher</button>
             </div>
           </div>
@@ -418,6 +421,36 @@ export default function SchoolHeadDashboard() {
       {showCsv && <ImportCsvModal schoolId={schoolId} onClose={() => setShowCsv(false)} onAdded={loadTeachers} />}
       {showBroadcast && <BroadcastModal schoolId={schoolId} onClose={() => setShowBroadcast(false)} />}
       {showAssign && assignTeacher && <AssignClassesModal schoolId={schoolId} teacher={assignTeacher} allClasses={allClasses} onClose={() => setShowAssign(false)} onSaved={loadTeachers} />}
+
+      <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="Staff — Help">
+        <HelpSection icon="👥" title="What is this screen?">
+          The Staff page is where you manage everyone who works at the school —
+          teachers, bursars, and the headteacher. Each person needs an account here
+          before they can log in to the app.
+        </HelpSection>
+        <HelpSection icon="➕" title="Adding a staff member">
+          <HelpStep n={1}>Tap <strong>+ Teacher</strong>.</HelpStep>
+          <HelpStep n={2}>Enter their full name, phone number (for OTP login), and optionally an email address.</HelpStep>
+          <HelpStep n={3}>Choose their <strong>role</strong>: Teacher (takes attendance, enters scores) or Bursar (manages fees in Bazar Pay).</HelpStep>
+          <HelpStep n={4}>Tap <strong>Add</strong>. They can now log in using the OTP sent to their phone.</HelpStep>
+        </HelpSection>
+        <HelpSection icon="🏫" title="Assigning classes">
+          Tap <strong>Classes</strong> next to a teacher to choose which classes they
+          teach. A teacher only sees the students in their assigned classes when taking
+          attendance or entering scores.
+        </HelpSection>
+        <HelpSection icon="📢" title="Broadcast to parents">
+          Tap <strong>Broadcast</strong> to send a WhatsApp message to all
+          premium-subscribed parents in the school — useful for school notices,
+          fee reminders, or emergency updates.
+        </HelpSection>
+        <HelpSection icon="🔒" title="Deactivating a teacher">
+          Use <strong>Deactivate</strong> to temporarily block a teacher from logging in
+          without deleting their account and history. Use <strong>Remove</strong> to
+          permanently delete them.
+        </HelpSection>
+        <HelpTip>Import students via CSV (CSV button) to quickly bulk-enrol an entire class — you don't need to add students one by one.</HelpTip>
+      </HelpPanel>
     </div>
   );
 }

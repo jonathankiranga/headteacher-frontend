@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSchoolTerms, createSchoolTerm, updateSchoolTerm, deleteSchoolTerm } from '../utils/api.js';
+import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
 const TERM_NAMES = ['Term 1', 'Term 2', 'Term 3'];
 
@@ -40,6 +41,7 @@ export default function SchoolTermsPage() {
   // Year filter
   const currentYear = new Date().getFullYear();
   const [filterYear, setFilterYear] = useState(currentYear);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     if (!schoolId) { navigate('/teacher/login', { replace: true }); return; }
@@ -172,12 +174,17 @@ export default function SchoolTermsPage() {
               <div style={{ fontSize: 12, opacity: 0.8 }}>Set term dates for subscription &amp; report accuracy</div>
             </div>
           </div>
-          {isHead && (
-            <button onClick={openNew}
-              style={{ backgroundColor: '#fff', color: '#7B4F9B', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-              + Add Term
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setShowHelp(true)}
+              style={{ backgroundColor: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 16, cursor: 'pointer' }}
+              aria-label="Help">❓</button>
+            {isHead && (
+              <button onClick={openNew}
+                style={{ backgroundColor: '#fff', color: '#7B4F9B', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                + Add Term
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -367,6 +374,39 @@ export default function SchoolTermsPage() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
+
+      <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="School Terms — Help">
+        <HelpSection icon="📅" title="What is this screen?">
+          School Terms is where you record the official start and end dates for each
+          term of the academic year. Getting these right matters for two things:
+          <strong> parent subscriptions</strong> (they expire at term end) and
+          <strong> report cards</strong> (the "current term" label on reports comes
+          from here).
+        </HelpSection>
+        <HelpSection icon="➕" title="Adding a term">
+          <HelpStep n={1}>Tap <strong>+ Add Term</strong> in the header.</HelpStep>
+          <HelpStep n={2}>Select the <strong>Term Name</strong> (Term 1, 2, or 3), <strong>Year</strong>, and the <strong>Start</strong> and <strong>End</strong> dates.</HelpStep>
+          <HelpStep n={3}>Tap <strong>Add Term</strong> to save.</HelpStep>
+        </HelpSection>
+        <HelpSection icon="📋" title="Kenyan term calendar">
+          The standard Kenyan school calendar is:
+          <div style={{ marginTop: 6, fontSize: 12, color: '#555', lineHeight: 1.8 }}>
+            • <strong>Term 1</strong>: January – April<br />
+            • <strong>Term 2</strong>: May – August<br />
+            • <strong>Term 3</strong>: September – November
+          </div>
+        </HelpSection>
+        <HelpSection icon="📁" title="Copying to the next year">
+          At the end of the year, select the upcoming year tab and tap
+          <strong> Copy [year] dates into [next year]</strong>. Dates shift by one year —
+          then edit them to match the exact calendar.
+        </HelpSection>
+        <HelpSection icon="🎓" title="Relationship to Year-End Close">
+          The system uses Term 3's end date to decide when the Year-End Close banner
+          appears for the headteacher. Keep Term 3 end dates accurate.
+        </HelpSection>
+        <HelpTip>Update term dates at the start of every academic year before teachers begin marking attendance or entering scores.</HelpTip>
+      </HelpPanel>
     </div>
   );
 }

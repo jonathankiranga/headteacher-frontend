@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api.js';
+import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
 function StudentFormModal({ schoolId, student, classes, onClose, onSaved }) {
   const isEdit = !!student;
@@ -215,6 +216,7 @@ export default function StudentListPage() {
   const [showCsv, setShowCsv] = useState(false);
   const [editStudent, setEditStudent] = useState(null);
   const [selected, setSelected] = useState(new Set());
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     if (!schoolId) return;
@@ -262,6 +264,7 @@ export default function StudentListPage() {
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-base font-bold" style={{ color: '#333' }}>Students</h1>
             <div className="flex gap-2">
+              <button onClick={() => setShowHelp(true)} className="btn-ghost text-sm" aria-label="Help">❓</button>
               <button onClick={() => setShowCsv(true)} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(46,125,50,0.08)', color: '#2E7D32' }}>Import CSV</button>
               <button onClick={() => { setEditStudent(null); setShowForm(true); }} className="btn-secondary text-sm">+ Add</button>
             </div>
@@ -340,6 +343,36 @@ export default function StudentListPage() {
 
       {showForm && <StudentFormModal schoolId={schoolId} student={editStudent} classes={classes} onClose={() => { setShowForm(false); setEditStudent(null); }} onSaved={() => loadStudents()} />}
       {showCsv && <CsvImportModal schoolId={schoolId} classes={classes} onClose={() => setShowCsv(false)} onAdded={() => loadStudents()} />}
+
+      <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="Students — Help">
+        <HelpSection icon="🎒" title="What is this screen?">
+          The Students page is the school's central pupil register. Every student who
+          attends your school should have a record here. Their profile links them to a
+          class, which in turn connects them to attendance, exam scores, fee records,
+          and report cards.
+        </HelpSection>
+        <HelpSection icon="➕" title="Adding students">
+          <HelpStep n={1}>Tap <strong>+ Add</strong> to open the student form.</HelpStep>
+          <HelpStep n={2}>Fill in the student's name and assign them to a <strong>class</strong> (required).</HelpStep>
+          <HelpStep n={3}>Add guardian/parent contact details — the phone number is used to link a parent for premium WhatsApp alerts.</HelpStep>
+          <HelpStep n={4}>Medical notes and special needs are private and only visible to school staff.</HelpStep>
+        </HelpSection>
+        <HelpSection icon="📥" title="Bulk import via CSV">
+          For large cohorts, tap <strong>Import CSV</strong> and upload a spreadsheet. The
+          minimum required columns are <code>student_id</code> and <code>full_name</code>. You can
+          also include <code>parent_phone</code> and <code>parent_name</code> to link parents in one step.
+        </HelpSection>
+        <HelpSection icon="🎓" title="Promoting students">
+          Tick the checkboxes next to students you want to move to the next grade, then
+          tap <strong>Promote</strong>. This takes you to the Promotion page with those
+          students pre-selected.
+        </HelpSection>
+        <HelpSection icon="📋" title="Report cards">
+          Tap <strong>Report</strong> next to any student to view their CBC progress
+          report — attendance summary, subject scores per term, and competency ratings.
+        </HelpSection>
+        <HelpTip>Use the search box to find students by name or student ID. Filter by class to see a specific group.</HelpTip>
+      </HelpPanel>
     </div>
   );
 }

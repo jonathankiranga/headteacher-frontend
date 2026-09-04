@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchStudents, getCompetencies, getClassCompetencyRatings, saveCompetencyRatings, getClasses } from '../utils/api.js';
+import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
 function getLevelColor(level) {
   if (level === 'EE') return { bg: '#E8F5E9', text: '#2E7D32' };
@@ -23,6 +24,7 @@ export default function CompetencyRatingsPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     if (!teacherId) navigate('/teacher/login', { replace: true });
@@ -94,9 +96,12 @@ export default function CompetencyRatingsPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate('/home')} className="btn-ghost text-sm">← Back</button>
           <h1 className="text-base font-bold" style={{ color: '#333' }}>Competency & Values Ratings</h1>
-          <button onClick={handleSave} disabled={saving || !dirty} className="btn-secondary text-sm">
-            {saving ? 'Saving...' : dirty ? 'Save All *' : 'Saved'}
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowHelp(true)} className="btn-ghost text-sm" aria-label="Help">❓</button>
+            <button onClick={handleSave} disabled={saving || !dirty} className="btn-secondary text-sm">
+              {saving ? 'Saving...' : dirty ? 'Save All *' : 'Saved'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -196,6 +201,43 @@ export default function CompetencyRatingsPage() {
       <style>{`
         @media print { .navbar { display: none !important; } body { background: white !important; } }
       `}</style>
+
+      <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="Competency Ratings — Help">
+        <HelpSection icon="⭐" title="What is this screen?">
+          Under Kenya's CBC curriculum, students are assessed not just on academic scores
+          but also on <strong>Core Competencies</strong> (7 skills like communication and
+          creativity) and <strong>Core Values</strong> (7 character traits like respect
+          and responsibility). This screen is where teachers rate each student on those.
+        </HelpSection>
+        <HelpSection icon="📋" title="The two tabs">
+          <div style={{ marginBottom: 6 }}><strong>Core Competencies</strong> — cognitive and
+          social skills: Communication, Critical Thinking, Creativity, Collaboration,
+          Learning to Learn, Self-Efficacy, Digital Literacy.</div>
+          <strong>Core Values</strong> — character traits: Love, Responsibility, Respect,
+          Unity, Peace, Patriotism, Social Justice.
+        </HelpSection>
+        <HelpSection icon="👣" title="How to rate students">
+          <HelpStep n={1}>Select the <strong>Class</strong> and <strong>Term</strong>.</HelpStep>
+          <HelpStep n={2}>Choose the tab — <em>Core Competencies</em> or <em>Core Values</em>.</HelpStep>
+          <HelpStep n={3}>For each student, use the dropdown in each column to assign a level: <strong>EE, ME, AE,</strong> or <strong>BE</strong>.</HelpStep>
+          <HelpStep n={4}>Tap <strong>Save All</strong> when done. The button shows a <em>*</em> when there are unsaved changes.</HelpStep>
+        </HelpSection>
+        <HelpSection icon="📑" title="How it affects report cards">
+          Ratings entered here appear on each student's CBC Report Card under the
+          Core Competencies and Core Values sections — visible to parents and inspectors.
+        </HelpSection>
+        <HelpSection icon="🏆" title="Rating scale">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 4 }}>
+            {[['EE','Exceeding Expectations','#E8F5E9','#2E7D32'],['ME','Meeting Expectations','#E3F2FD','#1565C0'],['AE','Approaching Expectations','#FFF3E0','#E65100'],['BE','Below Expectations','#FFEBEE','#C62828']].map(([l,r,bg,c]) => (
+              <div key={l} style={{ padding:'5px 8px', borderRadius:5, backgroundColor:bg }}>
+                <strong style={{ color:c, fontSize:12 }}>{l}</strong>
+                <div style={{ fontSize:10, color:'#555' }}>{r}</div>
+              </div>
+            ))}
+          </div>
+        </HelpSection>
+        <HelpTip>Rate all students at the end of each term, before generating report cards.</HelpTip>
+      </HelpPanel>
     </div>
   );
 }

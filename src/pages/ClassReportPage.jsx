@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getClassReport, getCompetencies, saveCompetencyRatings, getClasses } from '../utils/api.js';
+import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -62,6 +63,7 @@ export default function ClassReportPage() {
   const [competencyDefs, setCompetencyDefs] = useState({ competencies: [], values: [] });
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     if (!teacherId) navigate('/teacher/login', { replace: true });
@@ -226,12 +228,15 @@ export default function ClassReportPage() {
             <button onClick={() => navigate('/home')} style={{ background: 'none', border: 'none', color: '#7B4F9B', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>← Back</button>
             <span style={{ fontWeight: 700, fontSize: 15, color: '#333' }}>Class Report (CBC)</span>
           </div>
-          {report && (
-            <button onClick={handleDownloadPdf} disabled={exporting}
-              style={{ backgroundColor: '#7B4F9B', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: exporting ? 0.7 : 1 }}>
-              {exporting ? 'Exporting…' : 'Download PDF'}
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button onClick={() => setShowHelp(true)} style={{ background: 'none', border: '1px solid #E0E0E0', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', fontSize: 14 }} aria-label="Help">❓</button>
+            {report && (
+              <button onClick={handleDownloadPdf} disabled={exporting}
+                style={{ backgroundColor: '#7B4F9B', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: exporting ? 0.7 : 1 }}>
+                {exporting ? 'Exporting…' : 'Download PDF'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -400,6 +405,40 @@ export default function ClassReportPage() {
       </div>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+      <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="Class Report — Help">
+        <HelpSection icon="📑" title="What is this screen?">
+          The Class Report gives you a full CBC performance matrix for one class, one
+          term, and one year. Every student is shown as a row; every Learning Area ×
+          CAT Session combination is a column. It is the headteacher's and teacher's
+          quick overview of how the whole class is doing.
+        </HelpSection>
+        <HelpSection icon="📊" title="Reading the table">
+          Each cell shows a performance level badge (EE / ME / AE / BE) for that student
+          in that subject session. The <strong>Overall</strong> column on the far right
+          is an aggregate across all sessions. Colours make it easy to spot students
+          who need support (orange/red) versus those who are excelling (green/blue).
+        </HelpSection>
+        <HelpSection icon="🔢" title="Level meanings">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 4 }}>
+            {[['EE','80%+ Exceeding','#E8F5E9','#2E7D32'],['ME','60–79% Meeting','#E3F2FD','#1565C0'],['AE','40–59% Approaching','#FFF3E0','#E65100'],['BE','<40% Below','#FFEBEE','#C62828']].map(([l,r,bg,c]) => (
+              <div key={l} style={{ padding:'5px 8px', borderRadius:5, backgroundColor:bg }}>
+                <strong style={{ color:c, fontSize:12 }}>{l}</strong>
+                <div style={{ fontSize:10, color:'#555' }}>{r}</div>
+              </div>
+            ))}
+          </div>
+        </HelpSection>
+        <HelpSection icon="📥" title="Downloading">
+          Tap <strong>Download PDF</strong> to export the full matrix as a landscape A3
+          PDF — useful for staff meetings, class reviews, or printing for parents' day.
+        </HelpSection>
+        <HelpSection icon="⭐" title="Competencies section">
+          Below the main table you'll find Core Competency and Core Value ratings entered
+          by the teacher in the <em>Competency Ratings</em> screen.
+        </HelpSection>
+        <HelpTip>If a session column shows all dashes (—), the teacher has not yet entered scores for that session. Remind them to save results in the CAT Exams screen.</HelpTip>
+      </HelpPanel>
     </div>
   );
 }

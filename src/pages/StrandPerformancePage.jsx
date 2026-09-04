@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStrandPerformance, getClasses } from '../utils/api.js';
 import { jsPDF } from 'jspdf';
+import HelpPanel, { HelpSection, HelpTip } from '../components/HelpPanel.jsx';
 
 const LEVEL_COLORS = {
   EE: { bg: '#E8F5E9', text: '#2E7D32', label: 'Exceeding Expectations' },
@@ -31,6 +32,7 @@ export default function StrandPerformancePage() {
   const [myClasses, setMyClasses] = useState([]);
   const [expandedAreas, setExpandedAreas] = useState({});
   const [exporting, setExporting] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     if (!teacherId) navigate('/teacher/login', { replace: true });
@@ -284,6 +286,7 @@ export default function StrandPerformancePage() {
           <h1 className="text-xl font-bold mt-1">🧬 Strand / Sub-strand Performance</h1>
           <p className="text-sm" style={{ color: '#888' }}>Formative assessment performance by strand and sub-strand</p>
         </div>
+        <button onClick={() => setShowHelp(true)} style={{ background: 'none', border: '1px solid #E0E0E0', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 14 }} aria-label="Help">❓ Help</button>
       </div>
 
       <div className="card p-4 mb-4">
@@ -386,6 +389,37 @@ export default function StrandPerformancePage() {
           No assessment data found for this class, term, and year.
         </div>
       )}
+
+      <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="Strand Performance — Help">
+        <HelpSection icon="🧬" title="What is this screen?">
+          Strand Performance drills deeper than the Class Report. Instead of just showing
+          an overall level per subject, it breaks each Learning Area down into its
+          individual <strong>Strands</strong> and <strong>Sub-strands</strong> — the
+          smallest assessable units in the CBC curriculum. This lets you see exactly
+          which topic within a subject a class is struggling with.
+        </HelpSection>
+        <HelpSection icon="📂" title="How to read it">
+          Each Learning Area (e.g. English) is a collapsible section. Tap to expand it.
+          Inside you'll see strands (e.g. Listening &amp; Speaking), and within each
+          strand, the individual sub-strands with their class average percentage and
+          performance level badge.
+        </HelpSection>
+        <HelpSection icon="🎯" title="Why it matters">
+          A class might have an overall "ME" (Meeting Expectations) in Mathematics, but
+          this report might reveal they are "BE" (Below Expectations) specifically in
+          Fractions. That tells the teacher exactly where to focus revision.
+        </HelpSection>
+        <HelpSection icon="🔍" title="Filtering">
+          Select a <strong>Class</strong>, <strong>Term</strong>, and <strong>Year</strong>
+          to load the data. This report is class-specific — select one class at a time.
+        </HelpSection>
+        <HelpSection icon="📥" title="Exporting">
+          Tap <strong>Download PDF</strong> for a printable landscape report, or
+          <strong> Print</strong> to send directly to a printer. Useful for staff
+          meetings and curriculum reviews.
+        </HelpSection>
+        <HelpTip>Sub-strands only appear if scores have been entered for them in the CAT Exams screen. A dash (—) means no data yet for that sub-strand.</HelpTip>
+      </HelpPanel>
     </div>
   );
 }

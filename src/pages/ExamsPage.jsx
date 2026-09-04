@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api, { fetchStudents, getClasses } from '../utils/api.js';
 import { getLearningAreas, getExamSessions, getLearningAreasWithSubAreas, getExamSessionResults, saveExamResults } from '../utils/api.js';
 import { saveExamResultsOffline, getUnsyncedExamResults, markExamResultsSynced } from '../utils/indexedDB.js';
+import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
 export default function ExamsPage() {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ export default function ExamsPage() {
   const [msg, setMsg] = useState('');
   const [premiumBlocked, setPremiumBlocked] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
+  const [showHelp, setShowHelp] = useState(false);
   const syncingRef = useRef(false);
 
   // ─── Background Sync ──────────────────────────────────────────
@@ -215,8 +217,11 @@ export default function ExamsPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate('/home')} className="btn-ghost text-sm">← Back</button>
           <h1 className="text-base font-bold" style={{ color: '#333' }}>CAT Exams</h1>
-          <div className="text-xs" style={{ color: syncStatus.startsWith('✓') ? '#2E7D32' : '#888' }}>
-            {syncStatus || (!navigator.onLine ? '● Offline' : '')}
+          <div className="flex items-center gap-2">
+            <div className="text-xs" style={{ color: syncStatus.startsWith('✓') ? '#2E7D32' : '#888' }}>
+              {syncStatus || (!navigator.onLine ? '● Offline' : '')}
+            </div>
+            <button onClick={() => setShowHelp(true)} className="btn-ghost text-sm" aria-label="Help">❓</button>
           </div>
         </div>
       </div>
@@ -391,6 +396,40 @@ export default function ExamsPage() {
           }}>{msg}</div>
         )}
       </div>
+
+      <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="CAT Exams — Help">
+        <HelpSection icon="📝" title="What is this screen?">
+          This is where teachers enter Continuous Assessment Test (CAT) scores for their
+          students. Scores are broken down by <strong>Learning Area</strong> and
+          <strong> Sub-learning Area</strong> so every strand can be assessed separately,
+          in line with the CBC curriculum.
+        </HelpSection>
+        <HelpSection icon="👣" title="How to enter scores">
+          <HelpStep n={1}>Select the <strong>Class</strong>, <strong>Term</strong>, and <strong>Year</strong>.</HelpStep>
+          <HelpStep n={2}>Pick a <strong>CAT Session</strong> from the dropdown. Sessions are created by the headteacher in <em>CAT Sessions Manager</em>.</HelpStep>
+          <HelpStep n={3}>For each student, enter a <strong>Score</strong> and an <strong>Out of</strong> value for every sub-area column. The system calculates the percentage and assigns an EE/ME/AE/BE level automatically.</HelpStep>
+          <HelpStep n={4}>Tap <strong>Save All</strong> at the bottom of each learning area table. The app saves offline and syncs when connected.</HelpStep>
+        </HelpSection>
+        <HelpSection icon="🏆" title="Performance levels">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 4 }}>
+            {[['EE','80%+','#E8F5E9','#2E7D32'],['ME','60–79%','#E3F2FD','#1565C0'],['AE','40–59%','#FFF3E0','#E65100'],['BE','<40%','#FFEBEE','#C62828']].map(([l,r,bg,c]) => (
+              <div key={l} style={{ padding:'6px 10px', borderRadius:6, backgroundColor:bg }}>
+                <strong style={{ color:c }}>{l}</strong>
+                <div style={{ fontSize:11, color:'#555' }}>{r}</div>
+              </div>
+            ))}
+          </div>
+        </HelpSection>
+        <HelpSection icon="🔒" title="Closed sessions">
+          Once the headteacher closes a session, scores become read-only. Re-open the
+          session in <em>CAT Sessions Manager</em> if corrections are needed.
+        </HelpSection>
+        <HelpSection icon="👨‍👩‍👧" title="How it affects parents">
+          Premium-subscribed parents receive a WhatsApp summary of their child's CAT
+          results when scores are saved to a closed session.
+        </HelpSection>
+        <HelpTip>Works offline — scores are stored locally and uploaded automatically when the internet is restored. Watch the sync indicator in the top bar.</HelpTip>
+      </HelpPanel>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../utils/api.js';
 import { getYearEndStatus } from '../utils/api.js';
+import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
 export default function PromotionPage() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export default function PromotionPage() {
   const [closing, setClosing] = useState(false);
   const [closeResult, setCloseResult] = useState(null);
   const [yearEndStatus, setYearEndStatus] = useState(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   // Load year-end status to pre-fill the closing year and show context
   useEffect(() => {
@@ -157,7 +159,7 @@ export default function PromotionPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate(-1)} className="btn-ghost text-sm">← Back</button>
           <h1 className="text-base font-bold" style={{ color: '#333' }}>Promotion</h1>
-          <div />
+          <button onClick={() => setShowHelp(true)} className="btn-ghost text-sm" aria-label="Help">❓</button>
         </div>
       </div>
 
@@ -339,6 +341,37 @@ export default function PromotionPage() {
           )}
         </div>
       </div>
+
+      <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="Promotion — Help">
+        <HelpSection icon="🎓" title="What is this screen?">
+          Promotion moves students from one grade level to the next at the end of the
+          academic year. There are two ways to do it: an automatic <strong>Year-End
+          Close</strong> that moves every student in one step, and a
+          <strong> manual section</strong> for moving individual students.
+        </HelpSection>
+        <HelpSection icon="⚡" title="Year-End Close (recommended)">
+          Run this once at the end of the year. It moves <em>every active student</em>
+          up one level (PP1→PP2→Grade 1…→Grade 9). Students in the highest level are
+          marked <strong>Graduated</strong>. Same stream is kept where possible.
+          <HelpStep n={1}>Confirm the academic year shown is correct.</HelpStep>
+          <HelpStep n={2}>Tap <strong>Run Year-End Close</strong> and confirm the prompt.</HelpStep>
+          <HelpStep n={3}>After it completes, go to <em>School Terms</em> and add next year's term dates, then ask teachers to refresh the app.</HelpStep>
+        </HelpSection>
+        <HelpSection icon="✋" title="Manual promotion">
+          Use this section to move specific students — for example a student repeating
+          a grade, or a new transfer student being placed in the correct class.
+          <HelpStep n={1}>Select the <strong>current class</strong> of the student(s).</HelpStep>
+          <HelpStep n={2}>Tick the students to move.</HelpStep>
+          <HelpStep n={3}>Tap <strong>Preview</strong> to see the destination class and action (Promote / Graduate).</HelpStep>
+          <HelpStep n={4}>Tap <strong>Execute Promotion</strong> to apply.</HelpStep>
+        </HelpSection>
+        <HelpSection icon="⚠️" title="Important notes">
+          Year-End Close <strong>cannot be undone</strong>. Run it only when all teachers
+          have finished entering Term 3 scores and attendance. Graduation removes the
+          student from the active class roster.
+        </HelpSection>
+        <HelpTip>Make sure the next year's classes exist in the Classes screen before running Year-End Close, so students have a destination class to move into.</HelpTip>
+      </HelpPanel>
     </div>
   );
 }

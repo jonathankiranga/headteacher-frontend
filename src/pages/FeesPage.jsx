@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api.js';
+import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
 export default function FeesPage() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export default function FeesPage() {
   const [assignFee, setAssignFee] = useState(null);
   const [assignClass, setAssignClass] = useState('');
   const [msg, setMsg] = useState('');
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     if (!schoolId || role !== 'head') navigate('/home', { replace: true });
@@ -68,7 +70,10 @@ export default function FeesPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate('/home')} className="btn-ghost text-sm">← Back</button>
           <h1 className="text-base font-bold" style={{ color: '#333' }}>Fee Structure</h1>
-          <button onClick={() => setShowForm(!showForm)} className="btn-secondary text-sm">{showForm ? 'Cancel' : '+ New Fee'}</button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowHelp(true)} className="btn-ghost text-sm" aria-label="Help">❓</button>
+            <button onClick={() => setShowForm(!showForm)} className="btn-secondary text-sm">{showForm ? 'Cancel' : '+ New Fee'}</button>
+          </div>
         </div>
       </div>
 
@@ -172,6 +177,30 @@ export default function FeesPage() {
 
         {msg && <div className="text-sm text-center py-2 rounded-lg" style={{ backgroundColor: msg.includes('Failed') ? '#FFEBEE' : '#E8F5E9', color: msg.includes('Failed') ? '#C62828' : '#2E7D32' }}>{msg}</div>}
       </div>
+
+      <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="Fee Structure — Help">
+        <HelpSection icon="💰" title="What is this screen?">
+          The Fee Structure screen is where the headteacher defines what fees the school
+          charges and which classes they apply to. It is a reference catalogue — actual
+          payment collection happens through <strong>Bazar Pay</strong> (the bursar's app).
+        </HelpSection>
+        <HelpSection icon="➕" title="Creating a fee item">
+          <HelpStep n={1}>Tap <strong>+ New Fee</strong> in the top bar.</HelpStep>
+          <HelpStep n={2}>Enter a descriptive <strong>Fee Name</strong> (e.g. "Tuition", "Activity Fee", "Lunch").</HelpStep>
+          <HelpStep n={3}>Set the <strong>Amount in KSh</strong>, the <strong>Term</strong>, and the <strong>Academic Year</strong>.</HelpStep>
+          <HelpStep n={4}>Tick <strong>Optional fee</strong> if it is not mandatory for all students.</HelpStep>
+          <HelpStep n={5}>Tap <strong>Create Fee Item</strong>.</HelpStep>
+        </HelpSection>
+        <HelpSection icon="🏫" title="Assigning a fee to a class">
+          After creating a fee, tap <strong>Assign</strong> next to it to link it to a
+          specific class. Leave the class blank to apply the fee school-wide.
+        </HelpSection>
+        <HelpSection icon="👨‍👩‍👧" title="How parents see fees">
+          Parents who are subscribed to premium alerts can see their child's outstanding
+          fees in the parent-facing app. The fee items defined here feed that view.
+        </HelpSection>
+        <HelpTip>Create separate fee items per term (Term 1, Term 2, Term 3) so the system can track what is due each term.</HelpTip>
+      </HelpPanel>
     </div>
   );
 }

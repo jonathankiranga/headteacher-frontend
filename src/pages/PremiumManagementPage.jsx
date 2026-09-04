@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api.js';
+import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
 export default function PremiumManagementPage() {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export default function PremiumManagementPage() {
   const [totalStudents, setTotalStudents] = useState(0);
   const [locked, setLocked] = useState(false);
   const [lockReason, setLockReason] = useState('');
+  const [showHelp, setShowHelp] = useState(false);
 
   const currentTerm = `Term ${Math.ceil((new Date().getMonth() + 1) / 4)}`;
   const currentYear = new Date().getFullYear();
@@ -84,7 +86,7 @@ export default function PremiumManagementPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate(-1)} className="btn-ghost text-sm">← Back</button>
           <h1 className="text-base font-bold" style={{ color: '#333' }}>Premium Management</h1>
-          <div />
+          <button onClick={() => setShowHelp(true)} className="btn-ghost text-sm" aria-label="Help">❓</button>
         </div>
       </div>
 
@@ -258,6 +260,41 @@ export default function PremiumManagementPage() {
           )}
         </div>
       </div>
+
+      <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="Premium Management — Help">
+        <HelpSection icon="🔑" title="What is premium?">
+          The EduApp is free for schools. <strong>Premium</strong> is an optional
+          subscription that unlocks WhatsApp alerts for parents — they receive
+          notifications when their child is absent, and when CAT results are published.
+        </HelpSection>
+        <HelpSection icon="💳" title="Two payment models">
+          <div style={{ marginBottom: 8 }}>
+            <strong>Parents pay individually</strong> — each parent subscribes and pays
+            directly through their own app. The school does not handle money.
+          </div>
+          <div>
+            <strong>School pays in bulk</strong> — the headteacher pays one lump sum via
+            M-Pesa to cover all active students. Teachers cannot post CAT results until
+            this payment is completed each term.
+          </div>
+        </HelpSection>
+        <HelpSection icon="📱" title="Paying via M-Pesa (school model)">
+          <HelpStep n={1}>Select <strong>School pays</strong> and save settings.</HelpStep>
+          <HelpStep n={2}>Confirm the per-student fee and total shown.</HelpStep>
+          <HelpStep n={3}>Enter your M-Pesa phone number and tap <strong>Pay</strong>.</HelpStep>
+          <HelpStep n={4}>An STK push is sent to your phone — enter your PIN to complete payment.</HelpStep>
+        </HelpSection>
+        <HelpSection icon="👨‍👩‍👧" title="What parents get">
+          Subscribed parents receive a WhatsApp message when their child is marked absent,
+          when CAT results are available, and for any school broadcasts the headteacher sends.
+        </HelpSection>
+        <HelpSection icon="⚠️" title="Locked setting">
+          Once you switch to <em>School pays</em> and pay, the model cannot be changed
+          until the term ends. This prevents disruption mid-term. Plan ahead before
+          switching.
+        </HelpSection>
+        <HelpTip>The Subscriptions table at the bottom shows which parents are currently active for the term and whether they paid individually or via the school.</HelpTip>
+      </HelpPanel>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api.js';
+import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
 export default function ClassManagementPage() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export default function ClassManagementPage() {
   const [showStreamForm, setShowStreamForm] = useState(false);
   const [editClass, setEditClass] = useState(null);
   const [newStreamName, setNewStreamName] = useState('');
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     if (!schoolId) return;
@@ -95,7 +97,10 @@ export default function ClassManagementPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate(-1)} className="btn-ghost text-sm">← Back</button>
           <h1 className="text-base font-bold" style={{ color: '#333' }}>Classes & Streams</h1>
-          <button onClick={() => setShowClassForm(true)} className="btn-secondary text-sm">+ Class</button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowHelp(true)} className="btn-ghost text-sm" aria-label="Help">❓</button>
+            <button onClick={() => setShowClassForm(true)} className="btn-secondary text-sm">+ Class</button>
+          </div>
         </div>
       </div>
 
@@ -248,6 +253,37 @@ export default function ClassManagementPage() {
           )}
         </div>
       </div>
+      <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="Classes & Streams — Help">
+        <HelpSection icon="🏫" title="What is this screen?">
+          This is where you set up the physical classroom structure of your school. A
+          <strong> class</strong> is a group of students at a specific grade level in a specific
+          academic year. A <strong>stream</strong> is a section within a grade level
+          (e.g. Grade 4 East, Grade 4 West).
+        </HelpSection>
+        <HelpSection icon="📐" title="Streams">
+          Streams let you divide a grade level into parallel sections. Common stream names
+          are East, West, North, South, A, B, Red, Blue, etc. Create streams first — they
+          then appear in the class creation form.
+        </HelpSection>
+        <HelpSection icon="📚" title="Creating a class">
+          <HelpStep n={1}>Tap <strong>+ Class</strong> in the top bar.</HelpStep>
+          <HelpStep n={2}>Select the <strong>Grade Level</strong> (PP1 → Grade 9).</HelpStep>
+          <HelpStep n={3}>Optionally pick a <strong>stream</strong> if your school divides grades into sections.</HelpStep>
+          <HelpStep n={4}>Set the <strong>Academic Year</strong> (e.g. 2026).</HelpStep>
+          <HelpStep n={5}>Tap <strong>Create</strong>. The class name is generated automatically (e.g. "Grade 4 East 2026").</HelpStep>
+        </HelpSection>
+        <HelpSection icon="🎒" title="Relationship to students">
+          Every student must belong to a class. After creating classes here, you can
+          assign students in the <strong>Students</strong> page. Teachers are also
+          assigned to classes in the <strong>Staff</strong> page.
+        </HelpSection>
+        <HelpSection icon="🎓" title="Relationship to promotion">
+          At year-end, the <strong>Promotion</strong> feature uses the grade level
+          (PP1→PP2→Grade 1…Grade 9) and stream to move students into the correct
+          next-year class automatically. Keep the grade levels accurate.
+        </HelpSection>
+        <HelpTip>Create all classes for the new year before running the Year-End Close, so students can be promoted into them.</HelpTip>
+      </HelpPanel>
     </div>
   );
 }

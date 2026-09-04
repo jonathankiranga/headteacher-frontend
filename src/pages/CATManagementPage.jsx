@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getLearningAreas, getExamSessions, createExamSession, updateExamSessionStatus, deleteExamSession, getLearningAreasWithSubAreas, createSubLearningArea, deleteSubLearningArea, getClasses, createLearningArea, updateLearningArea, deleteLearningArea } from '../utils/api.js';
 import api from '../utils/api.js';
+import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
 export default function CATManagementPage() {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ export default function CATManagementPage() {
   const [editingAreaId, setEditingAreaId] = useState(null);
   const [editAreaName, setEditAreaName] = useState('');
   const [editAreaLevel, setEditAreaLevel] = useState('');
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     if (role !== 'head') { navigate('/home', { replace: true }); return; }
@@ -209,7 +211,7 @@ export default function CATManagementPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate('/home')} className="btn-ghost text-sm">← Back</button>
           <h1 className="text-base font-bold" style={{ color: '#333' }}>CAT Sessions Manager</h1>
-          <div />
+          <button onClick={() => setShowHelp(true)} className="btn-ghost text-sm" aria-label="Help">❓</button>
         </div>
       </div>
 
@@ -472,6 +474,34 @@ export default function CATManagementPage() {
           }}>{msg}</div>
         )}
       </div>
+
+      <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="CAT Sessions Manager — Help">
+        <HelpSection icon="🗂️" title="What is this screen?">
+          This is the headteacher's control centre for assessments. Before teachers can
+          enter CAT scores, this screen must be set up. It has three sections:
+          <strong> Sessions</strong>, <strong>Subjects</strong>, and
+          <strong> Sub-Learning Areas</strong>.
+        </HelpSection>
+        <HelpSection icon="📅" title="Sessions">
+          A session is one instance of an assessment (e.g. "CAT 1 Term 1 2026" for
+          Grade 4). Creating a session opens it for teachers to enter scores.
+          <HelpStep n={1}>Select the <strong>Class, Term, Year</strong>, and <strong>Type</strong> (CAT 1, Mid Term, End Term, etc.).</HelpStep>
+          <HelpStep n={2}>Give it a descriptive <strong>name</strong> and optional open/close dates.</HelpStep>
+          <HelpStep n={3}>Tap <strong>Create Session</strong>. The session starts as <em>Scheduled</em>.</HelpStep>
+          <HelpStep n={4}>Toggle it to <strong>Open</strong> when teachers should start entering scores. Set it to <strong>Closed</strong> when done — this locks results and triggers parent notifications.</HelpStep>
+        </HelpSection>
+        <HelpSection icon="📚" title="Subjects (Learning Areas)">
+          Subjects are the top-level learning areas (e.g. English, Mathematics, Science).
+          Add all subjects taught at your school here. You can optionally tag each subject
+          with a grade level if it is only taught at a specific level.
+        </HelpSection>
+        <HelpSection icon="🔬" title="Sub-Learning Areas">
+          Each subject is divided into assessable parts (e.g. English → Language,
+          Composition, Reading). These sub-areas appear as columns in the CAT score entry
+          grid. Use <strong>Order</strong> to control the column sequence.
+        </HelpSection>
+        <HelpTip>Set up Subjects and Sub-Learning Areas once at the start of the year. Sessions are created each term per class.</HelpTip>
+      </HelpPanel>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api.js';
+import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
 const STATUS_COLORS = { Present: '#10B981', Absent: '#EF4444', Late: '#F59E0B', Excused: '#6B7280' };
 
@@ -45,6 +46,7 @@ export default function AttendanceAnalytics() {
   const [analytics, setAnalytics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(30);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     if (!schoolId || role !== 'head') navigate('/home', { replace: true });
@@ -79,6 +81,7 @@ export default function AttendanceAnalytics() {
               style={{ backgroundColor: days === 7 ? '#7B4F9B' : '#F0F0F0', color: days === 7 ? '#fff' : '#666' }}>7d</button>
             <button onClick={() => setDays(30)} className={`text-xs px-3 py-1.5 rounded-lg font-medium ${days === 30 ? 'text-white' : ''}`}
               style={{ backgroundColor: days === 30 ? '#7B4F9B' : '#F0F0F0', color: days === 30 ? '#fff' : '#666' }}>30d</button>
+            <button onClick={() => setShowHelp(true)} className="btn-ghost text-sm" aria-label="Help">❓</button>
           </div>
         </div>
       </div>
@@ -126,6 +129,37 @@ export default function AttendanceAnalytics() {
           </div>
         )}
       </div>
+      <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="Attendance Analytics — Help">
+        <HelpSection icon="📈" title="What is this screen?">
+          This chart gives the headteacher a school-wide view of how many students are
+          present, absent, late, or excused each day. Use it to spot patterns — like a
+          class that has high absences on Mondays, or a week where attendance dropped
+          across the whole school.
+        </HelpSection>
+        <HelpSection icon="📅" title="Reading the chart">
+          Each horizontal bar represents one school day. The coloured segments show the
+          breakdown of statuses for that day. The number on the right is
+          <strong> Present / Total</strong> for that day.
+          <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {[['#10B981','Present'],['#EF4444','Absent'],['#F59E0B','Late'],['#6B7280','Excused']].map(([c,l]) => (
+              <span key={l} style={{ display:'flex', alignItems:'center', gap:4, fontSize:12 }}>
+                <span style={{ width:12, height:12, borderRadius:3, backgroundColor:c, display:'inline-block' }} />{l}
+              </span>
+            ))}
+          </div>
+        </HelpSection>
+        <HelpSection icon="⏱️" title="Time range">
+          Switch between <strong>7 days</strong> (last week) and <strong>30 days</strong> (last month)
+          using the buttons in the top bar. The chart always shows the most recent 14 days
+          within the selected range.
+        </HelpSection>
+        <HelpSection icon="🎒" title="Relationship to students">
+          Data comes directly from the attendance marks teachers record every day. If a
+          teacher has not taken attendance for a particular day, that day will not appear
+          in the chart.
+        </HelpSection>
+        <HelpTip>A consistently high Absent rate for a specific day may indicate a timetable issue or a pattern worth investigating with the relevant class teacher.</HelpTip>
+      </HelpPanel>
     </div>
   );
 }
