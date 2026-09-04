@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchStudents, getLearningAreas, getExamSessions, createExamSession, updateExamSessionStatus, deleteExamSession, getLearningAreasWithSubAreas, createSubLearningArea, deleteSubLearningArea, getClasses } from '../utils/api.js';
+import { getLearningAreas, getExamSessions, createExamSession, updateExamSessionStatus, deleteExamSession, getLearningAreasWithSubAreas, createSubLearningArea, deleteSubLearningArea, getClasses, createLearningArea, updateLearningArea, deleteLearningArea } from '../utils/api.js';
 import api from '../utils/api.js';
 
 export default function CATManagementPage() {
@@ -25,10 +25,17 @@ export default function CATManagementPage() {
   // New sub-area form
   const [subForm, setSubForm] = useState({ area_id: '', sub_area_name: '', display_order: '' });
   const [creatingSub, setCreatingSub] = useState(false);
-  // Inline editing state
+  // Inline editing state for sub-areas
   const [editingSubId, setEditingSubId] = useState(null);
   const [editSubName, setEditSubName] = useState('');
   const [editSubOrder, setEditSubOrder] = useState('');
+
+  // ── Subjects (learning areas) CRUD ──────────────────────────────
+  const [subjectForm, setSubjectForm] = useState({ area_name: '', level_name: '' });
+  const [creatingSubject, setCreatingSubject] = useState(false);
+  const [editingAreaId, setEditingAreaId] = useState(null);
+  const [editAreaName, setEditAreaName] = useState('');
+  const [editAreaLevel, setEditAreaLevel] = useState('');
 
   useEffect(() => {
     if (role !== 'head') { navigate('/home', { replace: true }); return; }
@@ -49,6 +56,11 @@ export default function CATManagementPage() {
     getLearningAreas(schoolId, '').then(d => setAreas(d.areas || [])).catch(() => {});
     loadSubAreas();
   }, [schoolId]);
+
+  const loadAreas = () => {
+    if (!schoolId) return;
+    getLearningAreas(schoolId, '').then(d => setAreas(d.areas || [])).catch(() => {});
+  };
 
   // Load sessions
   const loadSessions = () => {
@@ -136,6 +148,61 @@ export default function CATManagementPage() {
     } catch (err) { setMsg('Failed: ' + err.message); }
   };
 
+  // ── Subjects handlers ────────────────────────────────────────────
+  const handleCreateSubject = async (e) => {
+    e.preventDefault();
+    if (!subjectForm.area_name.trim()) return;
+    setCreatingSubject(true);
+    try {
+      await createLearningArea({
+        school_id: schoolId,
+        area_name: subjectForm.area_name.trim(),
+        level_name: subjectForm.level_name.trim() || null,
+        teacher_id: teacherId
+      });
+      setSubjectForm({ area_name: '', level_name: '' });
+      loadAreas();
+      setMsg('Subject added');
+    } catch (err) { setMsg('Failed: ' + (err.response?.data?.error || err.message)); }
+    setCreatingSubject(false);
+  };
+
+  const startEditArea = (area) => {
+    setEditingAreaId(area.area_id);
+    setEditAreaName(area.area_name);
+    setEditAreaLevel(area.level_name || '');
+  };
+
+  const handleSaveEditArea = async (id) => {
+    if (!editAreaName.trim()) return;
+    try {
+      await updateLearningArea(id, {
+        area_name: editAreaName.trim(),
+        level_name: editAreaLevel.trim() || null,
+        teacher_id: teacherId
+      });
+      setEditingAreaId(null);
+      loadAreas();
+      setMsg('Subject updated');
+    } catch (err) { setMsg('Failed: ' + (err.response?.data?.error || err.message)); }
+  };
+
+  const handleDeleteArea = async (area) => {
+    if (!window.confirm(`Delete subject "${area.area_name}"?`)) return;
+    try {
+      await deleteLearningArea(area.area_id, teacherId);
+      loadAreas();
+      setMsg(`"${area.area_name}" deleted`);
+    } catch (err) {
+      const d = err.response?.data;
+      if (d?.error === 'in_use') {
+        setMsg(`Cannot delete: ${d.message}`);
+      } else {
+        setMsg('Failed: ' + (d?.error || err.message));
+      }
+    }
+  };
+
   return (
     <div style={{ backgroundColor: '#F8F8F8', minHeight: '100vh', paddingBottom: 70 }}>
       <div className="navbar px-4 py-3">
@@ -219,6 +286,90 @@ export default function CATManagementPage() {
                       Delete
                     </button>
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ─── Subjects (Learning Areas) ─── */}
+        <div className="card p-4">
+          <h2 className="font-bold text-sm mb-1" style={{ color: '#1a1a6c' }}>Subjects (Learning Areas)</h2>
+          <p className="text-xs mb-3" style={{ color: '#888' }}>
+            Each subject (e.g. English, Mathematics) can be broken into sub-areas for CAT scoring or strands for formative assessment.
+            Deleting is blocked if the subject has results linked to it.
+          </p>
+
+          {/* Add form */}
+          <form onSubmit={handleCreateSubject} className="flex gap-2 mb-4 flex-wrap">
+            <input
+              type="text" value={subjectForm.area_name}
+              onChange={e => setSubjectForm(f => ({ ...f, area_name: e.target.value }))}
+              className="input-field text-sm" style={{ flex: '2 1 160px', minWidth: 0 }}
+              placeholder="Subject name (e.g. English)" required
+            />
+            <input
+              type="text" value={subjectForm.level_name}
+              onChange={e => setSubjectForm(f => ({ ...f, level_name: e.target.value }))}
+              className="input-field text-sm" style={{ flex: '1 1 120px', minWidth: 0 }}
+              placeholder="Grade level (e.g. Grade 4)"
+            />
+            <button type="submit" disabled={creatingSubject}
+              className="btn-primary !w-auto px-4 !py-2 !text-sm" style={{ flexShrink: 0 }}>
+              {creatingSubject ? '...' : '+ Add'}
+            </button>
+          </form>
+
+          {/* List */}
+          {areas.length === 0 ? (
+            <p className="text-xs" style={{ color: '#bbb' }}>No subjects yet. Add one above.</p>
+          ) : (
+            <div className="space-y-1">
+              {areas.map(area => (
+                <div key={area.area_id} className="flex items-center gap-2 p-2 rounded-lg"
+                  style={{ border: '1px solid #EEEEEE', backgroundColor: '#FAFAFA' }}>
+                  {editingAreaId === area.area_id ? (
+                    <>
+                      <input
+                        type="text" value={editAreaName}
+                        onChange={e => setEditAreaName(e.target.value)}
+                        className="input-field text-sm" style={{ flex: 2, padding: '4px 8px' }}
+                        autoFocus
+                        onKeyDown={e => { if (e.key === 'Enter') handleSaveEditArea(area.area_id); if (e.key === 'Escape') setEditingAreaId(null); }}
+                      />
+                      <input
+                        type="text" value={editAreaLevel}
+                        onChange={e => setEditAreaLevel(e.target.value)}
+                        className="input-field text-sm" style={{ flex: 1, padding: '4px 8px' }}
+                        placeholder="Grade level"
+                      />
+                      <button onClick={() => handleSaveEditArea(area.area_id)}
+                        style={{ padding: '4px 10px', borderRadius: 6, border: 'none', backgroundColor: '#7B4F9B', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                        Save
+                      </button>
+                      <button onClick={() => setEditingAreaId(null)}
+                        style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #DDD', backgroundColor: '#fff', color: '#666', fontSize: 12, cursor: 'pointer' }}>
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#333', flex: 1 }}>{area.area_name}</span>
+                      {area.level_name && (
+                        <span style={{ fontSize: 11, color: '#7B4F9B', backgroundColor: '#F3E7FA', padding: '2px 8px', borderRadius: 10 }}>
+                          {area.level_name}
+                        </span>
+                      )}
+                      <button onClick={() => startEditArea(area)}
+                        style={{ padding: '3px 10px', borderRadius: 6, border: '1px solid #DDD', backgroundColor: '#fff', color: '#555', fontSize: 11, cursor: 'pointer' }}>
+                        Edit
+                      </button>
+                      <button onClick={() => handleDeleteArea(area)}
+                        style={{ padding: '3px 10px', borderRadius: 6, border: '1px solid #FFCDD2', backgroundColor: '#FFF5F5', color: '#C62828', fontSize: 11, cursor: 'pointer' }}>
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
