@@ -19,25 +19,38 @@ export default function ReportCardPage() {
   const currentTerm = `Term ${Math.ceil((new Date().getMonth() + 1) / 4)}`;
 
   // Student picker state (shown when no studentId in URL)
+  const [pickerClasses, setPickerClasses] = useState([]);
+  const [pickerClassId, setPickerClassId] = useState('');
   const [pickerStudents, setPickerStudents] = useState([]);
   const [pickerLoading, setPickerLoading] = useState(true);
-  const [pickerSearch, setPickerSearch] = useState('');
+  const [pickerStudentsLoading, setPickerStudentsLoading] = useState(false);
 
   useEffect(() => {
     setSelectedTerm(urlTerm || currentTerm);
   }, [urlTerm]);
 
-  // Load student list when no studentId (picker mode)
+  // Load classes when no studentId (picker mode)
   useEffect(() => {
     if (studentId) return;
     setPickerLoading(true);
-    const teacherId = sessionStorage.getItem('teacher_id');
-    if (!teacherId) { setPickerLoading(false); return; }
-    api.get(`/api/attendance/students/${teacherId}`)
-      .then(d => setPickerStudents(d.students || []))
+    const sid = sessionStorage.getItem('school_id');
+    if (!sid) { setPickerLoading(false); return; }
+    api.get('/api/fees/classes', { params: { school_id: sid } })
+      .then(d => setPickerClasses((d.classes || []).sort((a, b) => (a.class_rank || 0) - (b.class_rank || 0))))
       .catch(() => {})
       .finally(() => setPickerLoading(false));
   }, [studentId]);
+
+  // Load students when a class is selected
+  useEffect(() => {
+    if (studentId || !pickerClassId) { setPickerStudents([]); return; }
+    setPickerStudentsLoading(true);
+    const sid = sessionStorage.getItem('school_id');
+    api.get(`/api/school-head/${sid}/students`, { params: { class_id: pickerClassId } })
+      .then(d => setPickerStudents(d.students || []))
+      .catch(() => {})
+      .finally(() => setPickerStudentsLoading(false));
+  }, [studentId, pickerClassId]);
 
   // Load report when studentId is present
   useEffect(() => {
@@ -73,54 +86,57 @@ export default function ReportCardPage() {
     return map[level] || { bg: '#F5F5F5', text: '#888' };
   }
 
-  // Student picker: grouped by class, shown when no studentId in URL
+  // Student picker: class-first, shown when no studentId in URL
   if (!studentId) {
-    const search = pickerSearch.toLowerCase();
-    const filtered = pickerStudents.filter(s =>
-      (s.full_name || '').toLowerCase().includes(search) ||
-      (s.class_name || '').toLowerCase().includes(search)
-    );
-    const byClass = {};
-    filtered.forEach(s => {
-      const cls = s.class_name || 'Unassigned';
-      if (!byClass[cls]) byClass[cls] = [];
-      byClass[cls].push(s);
-    });
-    const classNames = Object.keys(byClass).sort();
+    const selectedClass = pickerClasses.find(c => c.class_id == pickerClassId);
     return (
       <div style={{ backgroundColor: '#F8F8F8', minHeight: '100vh', paddingBottom: 70 }}>
         <div className="navbar px-4 py-3">
           <div className="max-w-3xl mx-auto flex items-center justify-between">
-            <button onClick={() => navigate('/home')} className="btn-ghost text-sm">← Home</button>
-            <h1 className="text-sm font-semibold" style={{ color: '#333' }}>Report Cards</h1>
+            <button onClick={() => pickerClassId ? setPickerClassId('') : navigate('/home')} className="btn-ghost text-sm">
+              {pickerClassId ? '← Classes' : '← Home'}
+            </button>
+            <h1 className="text-sm font-semibold" style={{ color: '#333' }}>
+              {selectedClass ? selectedClass.class_name : 'Report Cards'}
+            </h1>
             <div style={{ width: 60 }} />
           </div>
         </div>
         <div className="max-w-3xl mx-auto px-4 py-6">
-          <input
-            type="text"
-            placeholder="Search student name..."
-            value={pickerSearch}
-            onChange={e => setPickerSearch(e.target.value)}
-            className="w-full text-sm px-4 py-2.5 rounded-lg mb-4"
-            style={{ border: '1px solid #E0E0E0', outline: 'none', backgroundColor: '#fff' }}
-          />
           {pickerLoading ? (
             <div className="flex justify-center py-12">
               <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#7B4F9B', borderTopColor: 'transparent' }} />
             </div>
-          ) : classNames.length === 0 ? (
-            <div className="text-center py-12" style={{ color: '#888' }}>No students found</div>
+          ) : !pickerClassId ? (
+            <>
+              <p className="text-xs font-medium mb-3 px-1" style={{ color: '#888' }}>Select a class</p>
+              <div className="grid grid-cols-2 gap-3">
+                {pickerClasses.map(c => (
+                  <button key={c.class_id} onClick={() => setPickerClassId(c.class_id)}
+                    className="text-left p-4 rounded-xl transition-all"
+                    style={{ backgroundColor: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
+                    onMouseEnter={e => e.currentTarget.style.boxShadow = '0 3px 12px rgba(123,79,155,0.15)'}
+                    onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'}>
+                    <div className="text-base font-bold" style={{ color: '#7B4F9B' }}>{c.class_name}</div>
+                    <div className="text-xs mt-1" style={{ color: '#aaa' }}>View students →</div>
+                  </button>
+                ))}
+                {pickerClasses.length === 0 && (
+                  <div className="col-span-2 text-center py-12" style={{ color: '#888' }}>No classes found</div>
+                )}
+              </div>
+            </>
           ) : (
-            classNames.map(cls => (
-              <div key={cls} className="mb-5">
-                <div className="flex items-center gap-2 mb-2 px-1">
-                  <span className="text-xs font-bold uppercase tracking-wide" style={{ color: '#7B4F9B' }}>{cls}</span>
-                  <span className="text-xs" style={{ color: '#aaa' }}>({byClass[cls].length})</span>
-                  <div className="flex-1" style={{ borderBottom: '1px solid #E8E0F0' }} />
+            <>
+              {pickerStudentsLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#7B4F9B', borderTopColor: 'transparent' }} />
                 </div>
-                <div className="space-y-1.5">
-                  {byClass[cls].map(s => (
+              ) : pickerStudents.length === 0 ? (
+                <div className="text-center py-12" style={{ color: '#888' }}>No students in this class</div>
+              ) : (
+                <div className="space-y-2">
+                  {pickerStudents.map(s => (
                     <button key={s.student_id} onClick={() => navigate(`/exams/report/${s.student_id}`)}
                       className="w-full flex items-center gap-3 p-3 text-left rounded-lg transition-all"
                       style={{ backgroundColor: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
@@ -135,8 +151,8 @@ export default function ReportCardPage() {
                     </button>
                   ))}
                 </div>
-              </div>
-            ))
+              )}
+            </>
           )}
         </div>
       </div>
