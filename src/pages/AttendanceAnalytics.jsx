@@ -4,7 +4,23 @@ import api from '../utils/api.js';
 
 const STATUS_COLORS = { Present: '#10B981', Absent: '#EF4444', Late: '#F59E0B', Excused: '#6B7280' };
 
-function Bar({ label, counts, max }) {
+function fmtDate(raw) {
+  // MySQL DATE columns arrive as '2026-08-31' or '2026-08-31T00:00:00.000Z'
+  // Parse as local date to avoid UTC midnight shifting the day
+  let date;
+  if (typeof raw === 'string') {
+    // Take first 10 chars (YYYY-MM-DD) in case full ISO timestamp is provided
+    const dateStr = raw.substring(0, 10);
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    }
+  }
+  if (date && !isNaN(date)) {
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
+  return raw || '—';
+}
   if (!max) return null;
   return (
     <div className="flex items-center gap-2 mb-1">
@@ -82,7 +98,7 @@ export default function AttendanceAnalytics() {
         ) : (
           <div className="card p-5">
             <div className="space-y-1">
-              {dates.map(d => <Bar key={d} label={d.slice(5)} counts={byDate[d]} max={maxCount} />)}
+              {dates.map(d => <Bar key={d} label={fmtDate(d)} counts={byDate[d]} max={maxCount} />)}
             </div>
           </div>
         )}
