@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getLevelDistribution, getClasses } from '../utils/api.js';
 import { jsPDF } from 'jspdf';
+import HelpPanel, { HelpSection, HelpTip } from '../components/HelpPanel.jsx';
 
 const LEVEL_COLORS = {
   EE: { bg: '#E8F5E9', text: '#2E7D32', label: 'Exceeding Expectations' },
@@ -23,6 +24,7 @@ export default function LevelDistributionPage() {
   const [error, setError] = useState('');
   const [myClasses, setMyClasses] = useState([]);
   const [exporting, setExporting] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     if (!teacherId) navigate('/teacher/login', { replace: true });
@@ -224,6 +226,7 @@ export default function LevelDistributionPage() {
   if (!teacherId) return null;
 
   return (
+    <>
     <div className="max-w-6xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -231,6 +234,7 @@ export default function LevelDistributionPage() {
           <h1 className="text-xl font-bold mt-1">📊 Level Distribution Report</h1>
           <p className="text-sm" style={{ color: '#888' }}>EE/ME/AE/BE distribution across classes</p>
         </div>
+        <button onClick={() => setShowHelp(true)} style={{ background: 'none', border: '1px solid #E0E0E0', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 14 }} aria-label="Help">❓ Help</button>
       </div>
 
       <div className="card p-4 mb-4">
@@ -355,5 +359,40 @@ export default function LevelDistributionPage() {
           </div>
         )}
     </div>
+
+    <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} title="Level Distribution — Help">
+      <HelpSection icon="📊" title="What is this screen?">
+        Level Distribution gives the headteacher a school-wide snapshot of how students
+        are performing across all classes for a given term and year. Rather than looking
+        at individual scores, it shows the <strong>proportion of students at each CBC
+        performance level</strong> — useful for identifying classes or subjects that need
+        more support.
+      </HelpSection>
+      <HelpSection icon="🔢" title="The four levels">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 4 }}>
+          {[['EE','80%+ Exceeding','#E8F5E9','#2E7D32'],['ME','60–79% Meeting','#E3F2FD','#1565C0'],['AE','40–59% Approaching','#FFF3E0','#E65100'],['BE','<40% Below','#FFEBEE','#C62828']].map(([l,r,bg,c]) => (
+            <div key={l} style={{ padding:'5px 8px', borderRadius:5, backgroundColor:bg }}>
+              <strong style={{ color:c, fontSize:12 }}>{l}</strong>
+              <div style={{ fontSize:10, color:'#555' }}>{r}</div>
+            </div>
+          ))}
+        </div>
+      </HelpSection>
+      <HelpSection icon="🏫" title="School-wide rollup">
+        The top summary cards show total students, how many have been assessed, the
+        school average percentage, and the percentage of students Below Expectations.
+        The coloured bars below show the breakdown across all four levels.
+      </HelpSection>
+      <HelpSection icon="📋" title="Per-class breakdown">
+        The table at the bottom shows each class individually — useful for comparing
+        performance between parallel classes (e.g. Grade 4 East vs Grade 4 West).
+      </HelpSection>
+      <HelpSection icon="🔍" title="Filtering">
+        Use the <strong>Class</strong> dropdown to narrow down to one class. Leave it
+        as <em>All Classes</em> for the full school view.
+      </HelpSection>
+      <HelpTip>A high BE% (Below Expectations) in a specific class is a signal to investigate — check which subjects are dragging the average down using the Strand Performance report.</HelpTip>
+    </HelpPanel>
+    </>
   );
 }

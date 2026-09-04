@@ -362,4 +362,21 @@ export async function getYearEndStatus(schoolId) {
   return data; // { needs_close, year, last_term_ended, already_run }
 }
 
+// ─── Headteacher Terms & Conditions ─────────────────────────────────────────
+
+export async function getHeadTeacherTerms(schoolId) {
+  const { data } = await api.get(`/api/school-head/${schoolId}/terms/headteacher`);
+  return data; // { version, effective_date, title, accepted, accepted_at, sections }
+}
+
+export async function getHeadTeacherTermsStatus(schoolId) {
+  const { data } = await api.get(`/api/school-head/${schoolId}/terms/status`);
+  return data; // { version, accepted, accepted_at }
+}
+
+export async function acceptHeadTeacherTerms(schoolId) {
+  const { data } = await api.post(`/api/school-head/${schoolId}/terms/accept`);
+  return data; // { success, version, accepted_at, emailed_to, cc }
+}
+
 export default api;
