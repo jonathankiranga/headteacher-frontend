@@ -12,9 +12,9 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'service-worker.js',
       manifest: {
-        name: 'Education APP — Teacher',
-        short_name: 'EduTeacher',
-        description: 'Teacher attendance & CBC assessment tool',
+        name: 'Education APP — Headteacher',
+        short_name: 'EduHead',
+        description: 'Headteacher portal — CBC school management',
         theme_color: '#7B4F9B',
         background_color: '#F8F8F8',
         display: 'standalone',
@@ -25,19 +25,8 @@ export default defineConfig({
           { src: 'icons/icon-512.svg', sizes: '512x512', type: 'image/svg+xml' }
         ]
       },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,json}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https?:\/\/.*\/api\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: { maxEntries: 100, maxAgeSeconds: 86400 },
-              networkTimeoutSeconds: 5
-            }
-          }
-        ]
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,svg,png,json}']
       }
     })
   ]
