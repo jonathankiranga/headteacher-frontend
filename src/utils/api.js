@@ -95,6 +95,21 @@ export async function getLearningAreas(schoolId, level) {
   return data;
 }
 
+export async function createLearningArea(body) {
+  const { data } = await api.post('/api/assessments/areas', body);
+  return data;
+}
+
+export async function updateLearningArea(id, body) {
+  const { data } = await api.put(`/api/assessments/areas/${id}`, body);
+  return data;
+}
+
+export async function deleteLearningArea(id, teacherId) {
+  const { data } = await api.delete(`/api/assessments/areas/${id}`, { params: { teacher_id: teacherId } });
+  return data;
+}
+
 export async function getStrands(areaId, term) {
   const { data } = await api.get('/api/assessments/strands', { params: { area_id: areaId, term } });
   return data;

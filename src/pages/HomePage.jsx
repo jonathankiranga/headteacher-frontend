@@ -7,6 +7,7 @@ import InstallPrompt from '../components/InstallPrompt.jsx';
 const allModules = [
   { id: 'attendance', label: 'Attendance', icon: '📋', desc: 'Mark and track daily student attendance', color: '#7B4F9B', route: '/teacher/attendance', roles: ['teacher', 'head'] },
   { id: 'exams', label: 'Exams', icon: '📝', desc: 'Create assessments and record scores', color: '#2E7D32', route: '/exams', roles: ['teacher', 'head'] },
+  { id: 'cat-management', label: 'CAT Sessions', icon: '📋', desc: 'Create and manage CAT sessions', color: '#4A148C', route: '/cat-management', roles: ['head'] },
   { id: 'teachers', label: 'Teachers', icon: '👥', desc: 'Manage teacher accounts and roles', color: '#2563EB', route: '/school-head', roles: ['head'] },
   { id: 'fees', label: 'Fee Structure', icon: '💰', desc: 'Set up school fees and track payments', color: '#059669', route: '/fees', roles: ['head'] },
   { id: 'analytics', label: 'Analytics', icon: '📈', desc: 'View attendance trends and insights', color: '#0EA5E9', route: '/analytics', roles: ['teacher', 'head'] },

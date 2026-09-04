@@ -295,15 +295,15 @@ export default function ReportCardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {cumulative.area_summary.map((a, i) => {
+                    {(cumulative.area_summary || []).map((a, i) => {
                       const overallPct = parseFloat(a.overall_avg || 0);
                       const level = getLevel(overallPct);
                       const ls = levelStyle(level);
                       return (
-                        <tr key={a.area_name} style={{ borderBottom: i < cumulative.area_summary.length - 1 ? '1px solid #F0F0F0' : 'none' }}>
+                        <tr key={a.area_name} style={{ borderBottom: i < (cumulative.area_summary || []).length - 1 ? '1px solid #F0F0F0' : 'none' }}>
                           <td className="px-3 py-2.5 text-sm font-medium" style={{ color: '#333' }}>{a.area_name}</td>
                           {terms.map(t => {
-                            const termData = cumulative.terms.find(td => td.term === t);
+                            const termData = (cumulative.terms || []).find(td => td.term === t);
                             const areaData = termData?.areas?.find(ad => ad.area_name === a.area_name);
                             return (
                               <td key={t} className="px-3 py-2.5 text-sm text-center" style={{ color: areaData?.avg_pct ? '#333' : '#ccc' }}>
