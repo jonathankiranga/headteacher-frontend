@@ -396,32 +396,43 @@ export default function ReportCardPage() {
                       {terms.map(t => (
                         <th key={t} className="text-center px-3 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>{t}</th>
                       ))}
-                      <th className="text-center px-3 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0', backgroundColor: '#F3E8FF' }}>Average</th>
+                      <th className="text-center px-3 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0', backgroundColor: '#F3E8FF' }}>Overall</th>
                       <th className="text-center px-3 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Level</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(cumulative.area_summary || []).map((a, i) => {
-                      const overallPct = parseFloat(a.overall_avg || 0);
-                      const level = getLevel(overallPct);
-                      const ls = levelStyle(level);
+                      const level = a.overall_level || null;
+                      const ls = level ? levelStyle(level) : null;
                       return (
                         <tr key={a.area_name} style={{ borderBottom: i < (cumulative.area_summary || []).length - 1 ? '1px solid #F0F0F0' : 'none' }}>
                           <td className="px-3 py-2.5 text-sm font-medium" style={{ color: '#333' }}>{a.area_name}</td>
                           {terms.map(t => {
                             const termData = (cumulative.terms || []).find(td => td.term === t);
                             const areaData = termData?.areas?.find(ad => ad.area_name === a.area_name);
+                            const cellLevel = areaData?.level || null;
+                            const cellLs = cellLevel ? levelStyle(cellLevel) : null;
                             return (
-                              <td key={t} className="px-3 py-2.5 text-sm text-center" style={{ color: areaData?.avg_pct ? '#333' : '#ccc' }}>
-                                {areaData?.avg_pct ? `${areaData.avg_pct}%` : '-'}
+                              <td key={t} className="px-3 py-2.5 text-sm text-center">
+                                {cellLevel && cellLs ? (
+                                  <span className="inline-flex px-2 py-0.5 rounded text-xs font-bold" style={{ backgroundColor: cellLs.bg, color: cellLs.text }}>
+                                    {cellLevel}
+                                  </span>
+                                ) : (
+                                  <span style={{ color: '#ccc' }}>-</span>
+                                )}
                               </td>
                             );
                           })}
                           <td className="px-3 py-2.5 text-sm text-center font-bold" style={{ color: '#7B4F9B', backgroundColor: '#F8F0FF' }}>
-                            {a.overall_avg ? `${a.overall_avg}%` : '-'}
+                            {level && ls ? (
+                              <span className="inline-flex px-2 py-0.5 rounded text-xs font-bold" style={{ backgroundColor: ls.bg, color: ls.text }}>
+                                {level}
+                              </span>
+                            ) : '-'}
                           </td>
                           <td className="px-3 py-2.5 text-center">
-                            {a.overall_avg ? (
+                            {level && ls ? (
                               <span className="inline-flex px-2 py-0.5 rounded text-xs font-bold" style={{ backgroundColor: ls.bg, color: ls.text }}>
                                 {level}
                               </span>

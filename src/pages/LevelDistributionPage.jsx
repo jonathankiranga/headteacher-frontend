@@ -59,14 +59,6 @@ export default function LevelDistributionPage() {
       const cls = { class_name: classId ? classes.find(c => c.class_id === Number(classId))?.class_name : 'All Classes', term, year };
       let y = 18;
 
-      const levelColor = (pct) => {
-        if (pct === null || pct === undefined) return null;
-        if (pct >= 80) return { code: 'EE', label: 'EE' };
-        if (pct >= 60) return { code: 'ME', label: 'ME' };
-        if (pct >= 40) return { code: 'AE', label: 'AE' };
-        return { code: 'BE', label: 'BE' };
-      };
-
       const leftMargin = 14;
       const pageWidth = doc.internal.pageSize.getWidth() - 28;
       const tableEndX = doc.internal.pageSize.getWidth() - 14;
@@ -93,12 +85,11 @@ export default function LevelDistributionPage() {
 
       const total = school.total_students || 0;
       const assessed = school.assessed_students || 0;
-      const avg = school.class_average;
-      const avgLevel = avg !== null ? levelColor(avg).label : '—';
+      const schoolLevel = school.overall_level || null;
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
-      doc.text(`Total Students: ${total} | Assessed: ${assessed} | Class Average: ${avg !== null ? avg + '%' : 'N/A'} (${avg !== null ? levelColor(avg).label : '—'})`, 14, y);
+      doc.text(`Total Students: ${total} | Assessed: ${assessed} | Overall Level: ${schoolLevel || 'N/A'}`, 14, y);
       y += 5;
       doc.text(`Classes: ${classes.length} | Below Expectations: ${school.level_percentages?.BE || 0}%`, 14, y);
       y += 8;
@@ -143,7 +134,7 @@ export default function LevelDistributionPage() {
       doc.setFontSize(8);
       doc.text('Class', colClass + 1, y);
       doc.text('Students', colStudents + 1, y);
-      doc.text('Avg %', colAvg + 1, y);
+      doc.text('Overall', colAvg + 1, y);
       doc.text('EE', colEE + 1, y);
       doc.text('ME', colME + 1, y);
       doc.text('AE', colAE + 1, y);
@@ -165,7 +156,7 @@ export default function LevelDistributionPage() {
           doc.setFontSize(8);
           doc.text('Class', 15, y);
           doc.text('Students', 65, y);
-          doc.text('Avg %', 90, y);
+          doc.text('Overall', 90, y);
           doc.text('EE', 112, y);
           doc.text('ME', 132, y);
           doc.text('AE', 152, y);
@@ -176,13 +167,12 @@ export default function LevelDistributionPage() {
           doc.setFontSize(7);
         }
 
-        const avg = c.class_average;
-        const avgLevel = avg !== null ? levelColor(avg).label : '—';
+        const cLevel = c.overall_level || null;
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
         doc.text(c.class_name.substring(0, 30), 15, y);
         doc.text(String(c.total_students || 0), colStudents + 2, y);
-        doc.text(avg !== null ? `${avg}%` : '—', colAvg + 1, y);
+        doc.text(cLevel || '—', colAvg + 1, y);
         doc.text(String(c.level_counts?.EE || 0), colEE + 2, y);
         doc.text(String(c.level_counts?.ME || 0), colME + 2, y);
         doc.text(String(c.level_counts?.AE || 0), colAE + 2, y);
@@ -205,7 +195,7 @@ export default function LevelDistributionPage() {
       doc.setFontSize(8);
       doc.text(`Total Students: ${school.total_students || 0} | Assessed: ${school.assessed_students || 0} | Classes: ${classes.length}`, leftMargin, y);
       y += 5;
-      doc.text(`School Average: ${school.class_average !== null ? school.class_average + '%' : 'N/A'} (${school.class_average !== null ? levelColor(school.class_average).label : '—'})`, leftMargin, y);
+      doc.text(`School Overall Level: ${school.overall_level || 'N/A'}`, leftMargin, y);
       y += 5;
       const levelDist = ['EE', 'ME', 'AE', 'BE'].map(lv => `${lv}: ${school.level_counts?.[lv] || 0} (${school.level_percentages?.[lv] || 0}%)`).join(' | ');
       doc.text(`Level Distribution: ${levelDist}`, leftMargin, y);
@@ -270,8 +260,8 @@ export default function LevelDistributionPage() {
                 <div className="text-xs" style={{ color: '#888' }}>Total Students</div>
               </div>
               <div className="text-center p-3 rounded" style={{ backgroundColor: '#E8F5E9' }}>
-                <div className="text-lg font-bold" style={{ color: '#2E7D32' }}>{report.school.class_average !== null ? `${report.school.class_average}%` : 'N/A'}</div>
-                <div className="text-xs" style={{ color: '#888' }}>Class Average</div>
+                <div className="text-lg font-bold" style={{ color: '#2E7D32' }}>{report.school.overall_level || 'N/A'}</div>
+                <div className="text-xs" style={{ color: '#888' }}>Overall Level</div>
               </div>
               <div className="text-center p-3 rounded" style={{ backgroundColor: '#E3F2FD' }}>
                 <div className="text-lg font-bold" style={{ color: '#1565C0' }}>{report.school.assessed_students}</div>
@@ -319,7 +309,7 @@ export default function LevelDistributionPage() {
                     <tr style={{ backgroundColor: '#FAFAFA' }}>
                       <th className="text-left px-3 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Class</th>
                       <th className="text-center px-2 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Students</th>
-                      <th className="text-center px-2 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Avg %</th>
+                      <th className="text-center px-2 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Overall</th>
                       {['EE', 'ME', 'AE', 'BE'].map(lv => (
                         <th key={lv} className="text-center px-2 py-2 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>{lv}</th>
                       ))}
@@ -330,8 +320,8 @@ export default function LevelDistributionPage() {
                       <tr key={c.class_id} style={{ borderBottom: i < (report.classes.length - 1) ? '1px solid #F0F0F0' : 'none' }}>
                         <td className="px-3 py-2 text-sm font-medium" style={{ color: '#333' }}>{c.class_name}</td>
                         <td className="px-2 py-2 text-sm text-center" style={{ color: '#666' }}>{c.total_students}</td>
-                        <td className="px-2 py-2 text-sm text-center font-semibold" style={{ color: c.class_average !== null ? '#333' : '#999' }}>
-                          {c.class_average !== null ? `${c.class_average}%` : '—'}
+                        <td className="px-2 py-2 text-sm text-center font-semibold" style={{ color: c.overall_level ? '#333' : '#999' }}>
+                          {c.overall_level || '—'}
                         </td>
                         {['EE', 'ME', 'AE', 'BE'].map(lv => {
                           const clr = LEVEL_COLORS[lv];
@@ -380,7 +370,7 @@ export default function LevelDistributionPage() {
       </HelpSection>
       <HelpSection icon="🏫" title="School-wide rollup">
         The top summary cards show total students, how many have been assessed, the
-        school average percentage, and the percentage of students Below Expectations.
+        overall level, and the percentage of students Below Expectations.
         The coloured bars below show the breakdown across all four levels.
       </HelpSection>
       <HelpSection icon="📋" title="Per-class breakdown">
@@ -391,7 +381,7 @@ export default function LevelDistributionPage() {
         Use the <strong>Class</strong> dropdown to narrow down to one class. Leave it
         as <em>All Classes</em> for the full school view.
       </HelpSection>
-      <HelpTip>A high BE% (Below Expectations) in a specific class is a signal to investigate — check which subjects are dragging the average down using the Strand Performance report.</HelpTip>
+      <HelpTip>A high BE% (Below Expectations) in a specific class is a signal to investigate — check which learning areas hold the most BE ratings using the Strand Performance report.</HelpTip>
     </HelpPanel>
     </>
   );
