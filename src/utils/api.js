@@ -198,17 +198,6 @@ export async function verifyMerchantOtp(session_id, code) {
   return data;
 }
 
-// Premium
-export async function upgradePremium(phone) {
-  const { data } = await api.post('/api/parents/upgrade', { phone });
-  return data;
-}
-
-export async function getPremiumStatus(phone) {
-  const { data } = await api.get(`/api/parents/premium-status/${encodeURIComponent(phone)}`);
-  return data;
-}
-
 // Analytics
 export async function getAttendanceAnalytics(schoolId, days) {
   const { data } = await api.get(`/api/school-head/${schoolId}/analytics/attendance`, { params: { days } });

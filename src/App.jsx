@@ -16,7 +16,6 @@ import CATManagementPage from './pages/CATManagementPage.jsx';
 import StudentListPage from './pages/StudentListPage.jsx';
 import PromotionPage from './pages/PromotionPage.jsx';
 import ClassManagementPage from './pages/ClassManagementPage.jsx';
-import PremiumManagementPage from './pages/PremiumManagementPage.jsx';
 import LevelDistributionPage from './pages/LevelDistributionPage.jsx';
 import StrandPerformancePage from './pages/StrandPerformancePage.jsx';
 import SchoolTermsPage from './pages/SchoolTermsPage.jsx';
@@ -48,7 +47,6 @@ function AppLayout() {
         <Route path="/students" element={<StudentListPage />} />
         <Route path="/promotion" element={<PromotionPage />} />
         <Route path="/classes" element={<ClassManagementPage />} />
-        <Route path="/premium" element={<PremiumManagementPage />} />
         <Route path="/level-distribution" element={<LevelDistributionPage />} />
         <Route path="/strand-performance" element={<StrandPerformancePage />} />
         <Route path="/school-terms" element={<SchoolTermsPage />} />

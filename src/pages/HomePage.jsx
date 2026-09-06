@@ -39,7 +39,6 @@ const groups = [
       { id: 'classes',        label: 'Classes',        icon: '🏫', desc: 'Manage class levels and streams',               color: '#0277BD', route: '/classes',         roles: ['head'] },
       { id: 'cat-management', label: 'CAT Sessions',   icon: '🗂️', desc: 'Create sessions, subjects and sub-areas',       color: '#4A148C', route: '/cat-management', roles: ['head'] },
       { id: 'fees',           label: 'Fee Structure',  icon: '💰', desc: 'Set up fees and track collections',             color: '#059669', route: '/fees',            roles: ['head'] },
-      { id: 'premium',        label: 'Subscriptions',  icon: '🔑', desc: 'Manage parent premium subscriptions',           color: '#B8860B', route: '/premium',         roles: ['head'] },
       { id: 'promotion',      label: 'Promotion',      icon: '🎓', desc: 'Promote or graduate students',                  color: '#2E7D32', route: '/promotion',       roles: ['head'] },
     ]
   },

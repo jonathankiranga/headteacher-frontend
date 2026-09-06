@@ -269,7 +269,7 @@ export default function SchoolHeadDashboard() {
     api.get('/api/exam-sessions/premium-status', { params: { school_id: schoolId } })
       .then(r => {
         if (r.data.blocked) {
-          setPremiumWarning('Premium payment required. Teachers cannot post exam results until the school pays for this term. Go to Premium Management to pay.');
+          setPremiumWarning('Premium payment required. Teachers cannot post exam results until the school pays for this term. Contact the school administrator.');
         } else {
           setPremiumWarning('');
         }
@@ -330,7 +330,6 @@ export default function SchoolHeadDashboard() {
               <button onClick={() => navigate('/students')} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(123,79,155,0.08)', color: '#7B4F9B' }}>Students</button>
               <button onClick={() => navigate('/classes')} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(123,79,155,0.08)', color: '#7B4F9B' }}>Classes</button>
               <button onClick={() => navigate('/promotion')} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(255,179,0,0.12)', color: '#B8860B' }}>Promotion</button>
-              <button onClick={() => navigate('/premium')} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(46,125,50,0.08)', color: '#2E7D32' }}>Premium</button>
               <button onClick={() => setShowBroadcast(true)} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(255,179,0,0.12)', color: '#B8860B' }}>Broadcast</button>
               <button onClick={() => navigate('/analytics')} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(123,79,155,0.08)', color: '#7B4F9B' }}>Analytics</button>
               <button onClick={() => setShowCsv(true)} className="text-xs px-2.5 py-1.5 rounded-lg font-medium" style={{ backgroundColor: 'rgba(46,125,50,0.08)', color: '#2E7D32' }}>CSV</button>
