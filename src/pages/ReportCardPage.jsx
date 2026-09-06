@@ -438,7 +438,7 @@ export default function ReportCardPage() {
               <div className="border-t pt-4" style={{ borderColor: '#F0F0F0' }}>
                 <h3 className="text-sm font-semibold mb-2" style={{ color: '#555' }}>Attendance by Term</h3>
                 <div className="grid grid-cols-3 gap-4">
-                  {cumulative.terms.map(td => (
+                  {(cumulative.terms || []).map(td => (
                     <div key={td.term} className="text-center p-2 rounded" style={{ backgroundColor: '#FAFAFA' }}>
                       <div className="text-xs font-medium" style={{ color: '#888' }}>{td.term}</div>
                       <div className="text-sm font-bold" style={{ color: '#333' }}>{td.attendance?.present || 0} / {td.attendance?.total || 0}</div>
