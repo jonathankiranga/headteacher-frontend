@@ -13,14 +13,14 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-// Auth
-export async function requestTeacherOtp(phone, email) {
-  const { data } = await api.post('/api/teachers/request-otp', { phone, email });
+// Auth (principle portal: head door only)
+export async function requestTeacherOtp(phone, email, role = 'head') {
+  const { data } = await api.post('/api/teachers/request-otp', { phone, email, role });
   return data;
 }
 
-export async function verifyTeacherOtp(session_id, code) {
-  const { data } = await api.post('/api/teachers/verify-otp', { session_id, code });
+export async function verifyTeacherOtp(session_id, code, role = 'head') {
+  const { data } = await api.post('/api/teachers/verify-otp', { session_id, code, role });
   return data;
 }
 
