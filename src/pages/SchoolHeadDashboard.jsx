@@ -171,7 +171,7 @@ function ImportCsvModal({ schoolId, onClose, onAdded }) {
   }
 
   function downloadCsvTemplate() {
-    const content = `student_id,full_name
+    const content = `student_id,full_name,nemis_number,parent_phone,parent_name
 STU001,Jane Wanjiku
 STU002,Peter Kamau,254712345678
 STU003,Grace Akinyi,254722998877,Mary Akinyi
@@ -190,11 +190,11 @@ STU003,Grace Akinyi,254722998877,Mary Akinyi
   async function downloadExcelTemplate() {
     const XLSX = await import('xlsx');
     const data = [
-      { student_id: 'STU001', full_name: 'Jane Wanjiku', parent_phone: '', parent_name: '' },
-      { student_id: 'STU002', full_name: 'Peter Kamau', parent_phone: '254712345678', parent_name: '' },
-      { student_id: 'STU003', full_name: 'Grace Akinyi', parent_phone: '254722998877', parent_name: 'Mary Akinyi' },
+      { student_id: 'STU001', full_name: 'Jane Wanjiku', nemis_number: '12345678', parent_phone: '', parent_name: '' },
+      { student_id: 'STU002', full_name: 'Peter Kamau', nemis_number: '87654321', parent_phone: '254712345678', parent_name: '' },
+      { student_id: 'STU003', full_name: 'Grace Akinyi', nemis_number: '', parent_phone: '254722998877', parent_name: 'Mary Akinyi' },
     ];
-    const ws = XLSX.utils.json_to_sheet(data, { header: ['student_id', 'full_name', 'parent_phone', 'parent_name'] });
+    const ws = XLSX.utils.json_to_sheet(data, { header: ['student_id', 'full_name', 'nemis_number', 'parent_phone', 'parent_name'] });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Students');
     XLSX.writeFile(wb, 'student-import-template.xlsx');

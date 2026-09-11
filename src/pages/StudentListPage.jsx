@@ -11,6 +11,7 @@ function StudentFormModal({ schoolId, student, classes, onClose, onSaved }) {
     gender: student?.gender || '',
     date_of_birth: student?.date_of_birth || '',
     admission_number: student?.admission_number || '',
+    nemis_number: student?.nemis_number || '',
     admission_date: student?.admission_date || '',
     guardian_name: student?.guardian_name || '',
     guardian_phone: student?.guardian_phone || '',
@@ -82,6 +83,10 @@ function StudentFormModal({ schoolId, student, classes, onClose, onSaved }) {
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Admission Number</label>
               <input name="admission_number" value={form.admission_number} onChange={handleChange} className="input-field" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>NEMIS Number</label>
+              <input name="nemis_number" value={form.nemis_number} onChange={handleChange} className="input-field" placeholder="e.g. 12345678" />
             </div>
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>Admission Date</label>
@@ -190,7 +195,7 @@ function CsvImportModal({ schoolId, classes, onClose, onAdded }) {
         </div>
         <div className="mb-3">
           <label className="block text-xs font-medium mb-1" style={{ color: '#555' }}>CSV File</label>
-          <p className="text-xs mb-1" style={{ color: '#888' }}>Format: <code>student_id,full_name,gender,date_of_birth,guardian_name,guardian_phone</code> — only full_name required</p>
+          <p className="text-xs mb-1" style={{ color: '#888' }}>Format: <code>student_id,full_name,nemis_number,parent_phone,parent_name</code> — only full_name required. NEMIS number is optional; skip it with an empty column.</p>
           <input type="file" accept=".csv" onChange={handleFile} className="input-field" style={{ padding: '8px 12px', fontSize: 13 }} />
           {fileName && <p className="text-xs mt-1" style={{ color: '#2E7D32' }}>Selected: {fileName}</p>}
         </div>
@@ -308,6 +313,7 @@ export default function StudentListPage() {
                     <th className="text-left px-3 py-3 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>ID</th>
                     <th className="text-left px-3 py-3 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Name</th>
                     <th className="text-left px-3 py-3 text-xs font-semibold uppercase hidden sm:table-cell" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Class</th>
+                    <th className="text-left px-3 py-3 text-xs font-semibold uppercase hidden sm:table-cell" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>NEMIS</th>
                     <th className="text-left px-3 py-3 text-xs font-semibold uppercase hidden sm:table-cell" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Gender</th>
                     <th className="text-right px-3 py-3 text-xs font-semibold uppercase" style={{ color: '#888', borderBottom: '1px solid #E0E0E0' }}>Actions</th>
                   </tr>
@@ -323,6 +329,7 @@ export default function StudentListPage() {
                         <button onClick={() => { setEditStudent(s); setShowForm(true); }} className="text-sm font-medium text-left hover:underline" style={{ color: '#333' }}>{s.full_name}</button>
                       </td>
                       <td className="px-3 py-3 text-sm hidden sm:table-cell" style={{ color: '#666' }}>{s.class_name}</td>
+                      <td className="px-3 py-3 text-xs font-mono hidden sm:table-cell" style={{ color: '#666' }}>{s.nemis_number || '-'}</td>
                       <td className="px-3 py-3 text-sm hidden sm:table-cell" style={{ color: '#666' }}>{s.gender || '-'}</td>
                       <td className="px-3 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
