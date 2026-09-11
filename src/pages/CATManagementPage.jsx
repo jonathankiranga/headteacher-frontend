@@ -15,7 +15,7 @@ export default function CATManagementPage() {
   const [subAreas, setSubAreas] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [filterClass, setFilterClass] = useState('');
-  const [filterTerm, setFilterTerm] = useState('Term 1');
+  const [filterTerm, setFilterTerm] = useState('');
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
 
   // New session form
@@ -251,9 +251,14 @@ export default function CATManagementPage() {
               {classes.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
             <select value={filterTerm} onChange={e => setFilterTerm(e.target.value)} className="input-field text-sm">
-              <option>Term 1</option><option>Term 2</option><option>Term 3</option>
+              <option value="">All Terms</option>
+              <option value="Term 1">Term 1</option>
+              <option value="Term 2">Term 2</option>
+              <option value="Term 3">Term 3</option>
             </select>
-            <input type="number" value={filterYear} onChange={e => setFilterYear(e.target.value)} className="input-field text-sm" />
+            <select value={filterYear} onChange={e => setFilterYear(parseInt(e.target.value))} className="input-field text-sm">
+              {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
           </div>
           {sessions.length === 0 ? (
             <p className="text-xs" style={{ color: '#888' }}>No sessions found.</p>
