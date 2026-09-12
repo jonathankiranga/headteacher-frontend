@@ -56,6 +56,16 @@ export default function HelpPage() {
         </div>
 
         <div className="card p-5">
+          <h2 className="text-base font-bold mb-4" style={{ color: '#7B4F9B' }}>School Setup &amp; KICD Curriculum</h2>
+          <div className="space-y-3">
+            <p className="text-sm leading-relaxed" style={{ color: '#666' }}>When a new school is created, the KICD <b>Learning Areas</b>, <b>Strands</b>, and <b>Sub-strands</b> for every grade are seeded automatically — no manual entry needed. The structure is:</p>
+            <p className="text-sm" style={{ color: '#333' }}><b>Learning Area</b> (e.g. English) → <b>Strand</b> (e.g. Reading) → <b>Sub-strand</b> (e.g. Comprehension)</p>
+            <p className="text-sm leading-relaxed" style={{ color: '#666' }}>This same ladder powers lesson plans and CAT scoring. Strands are tagged to the KICD term (1, 2, or 3), so each term's strands appear only in that term.</p>
+            <p className="text-sm leading-relaxed" style={{ color: '#666' }}>You can still <b>add, rename, or delete</b> strands and sub-strands anytime in <b>Manage CAT Sessions → Strands &amp; Sub-strands</b>. If a subject name differs from the KICD catalog (e.g. "Science" vs "Science and Technology"), its strands must be added manually.</p>
+          </div>
+        </div>
+
+        <div className="card p-5">
           <h2 className="text-base font-bold mb-4" style={{ color: '#7B4F9B' }}>Quick Tips</h2>
           <div className="space-y-2 text-sm" style={{ color: '#666' }}>
             <p>• Works offline — data syncs when internet is available</p>
