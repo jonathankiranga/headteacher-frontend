@@ -115,7 +115,9 @@ export default function ExamsPage() {
   // Load sub-learning areas
   useEffect(() => {
     if (!schoolId) return;
+    console.log('[DEBUG ExamsPage] Fetching learning areas', { schoolId, classId });
     getLearningAreasWithSubAreas(schoolId, classId).then(d => {
+      console.log('[DEBUG ExamsPage] Response:', { subAreasCount: d.sub_areas?.length, areas: d.sub_areas });
       const subAreas = d.sub_areas || [];
       const areaMap = {};
       subAreas.forEach(sa => {
@@ -127,7 +129,9 @@ export default function ExamsPage() {
         });
       });
       setAreas(Object.values(areaMap).sort((a, b) => a.area_name?.localeCompare(b.area_name)));
-    }).catch(() => {});
+    }).catch(err => {
+      console.error('[DEBUG ExamsPage] Error:', err);
+    });
   }, [schoolId, classId]);
 
   // Load existing results when session changes
