@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchStudents, getLearningAreas, getStrands, getSubStrands, getLessonPlans, createLessonPlan, updateLessonPlan, deleteLessonPlan, getClasses } from '../utils/api.js';
+import { fetchStudents, getLearningAreasByClass, getStrands, getSubStrands, getLessonPlans, createLessonPlan, updateLessonPlan, deleteLessonPlan, getClasses } from '../utils/api.js';
 import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
 function toDateInput(value) {
@@ -39,19 +39,35 @@ function LessonPlanModal({ plan, schoolId, onClose, onSaved }) {
   useEffect(() => {
     const teacherId = sessionStorage.getItem('teacher_id');
     if (schoolId) {
-      getLearningAreas(schoolId, '').then(d => setAreas((d.areas || []).map(a => ({ value: a.area_id, label: a.area_name })))).catch(() => {});
-    }
-    if (teacherId) {
       getClasses(schoolId).then(d => {
         const cls = (d.classes || []).map(c => ({ value: c.class_id, label: c.class_name }));
         setClasses(cls);
         setStudentData(prev => ({ ...prev, classes: cls }));
       }).catch(() => {});
+    }
+    if (teacherId) {
       fetchStudents(teacherId).then(data => {
         setStudentData(prev => ({ ...prev, students: data.students || [] }));
       }).catch(() => {});
     }
   }, [schoolId]);
+
+  // Fetch learning areas when classId changes
+  useEffect(() => {
+    if (!schoolId || !classId) {
+      setAreas([]);
+      return;
+    }
+    getLearningAreasByClass(schoolId, classId).then(d => {
+      setAreas((d.areas || []).map(a => ({ value: a.area_id, label: a.area_name })));
+      // Reset areaId if it's no longer valid
+      if (areaId && !(d.areas || []).some(a => a.area_id === areaId)) {
+        setAreaId('');
+      }
+    }).catch(() => {
+      setAreas([]);
+    });
+  }, [schoolId, classId]);
 
   useEffect(() => {
     if (areaId) getStrands(areaId, term).then(d => setStrands((d.strands || []).map(s => ({ value: s.strand_id, label: s.strand_name })))).catch(() => {});

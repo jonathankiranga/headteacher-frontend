@@ -82,7 +82,11 @@ export default function CATManagementPage() {
 
   const loadSubAreas = () => {
     if (!schoolId) return;
-    getLearningAreasWithSubAreas(schoolId).then(d => setSubAreas(d.sub_areas || [])).catch(() => {});
+    if (filterClass) {
+      getLearningAreasWithSubAreas(schoolId, filterClass).then(d => setSubAreas(d.sub_areas || [])).catch(() => {});
+    } else {
+      setSubAreas([]);
+    }
   };
 
   const handleCreateSession = async (e) => {
