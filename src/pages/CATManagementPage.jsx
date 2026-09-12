@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getLearningAreas, getExamSessions, createExamSession, updateExamSessionStatus, deleteExamSession, getLearningAreasWithSubAreas, createSubLearningArea, deleteSubLearningArea, getClasses, createLearningArea, updateLearningArea, deleteLearningArea } from '../utils/api.js';
+import { getLearningAreas, getLearningAreasByClass, getExamSessions, createExamSession, updateExamSessionStatus, deleteExamSession, getLearningAreasWithSubAreas, createSubLearningArea, deleteSubLearningArea, getClasses, createLearningArea, updateLearningArea, deleteLearningArea } from '../utils/api.js';
 import api from '../utils/api.js';
 import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
@@ -55,13 +55,21 @@ export default function CATManagementPage() {
   // Load learning areas
   useEffect(() => {
     if (!schoolId) return;
-    getLearningAreas(schoolId, '').then(d => setAreas(d.areas || [])).catch(() => {});
+    if (filterClass) {
+      getLearningAreasByClass(schoolId, filterClass).then(d => setAreas(d.areas || [])).catch(() => {});
+    } else {
+      setAreas([]);
+    }
     loadSubAreas();
-  }, [schoolId]);
+  }, [schoolId, filterClass]);
 
   const loadAreas = () => {
     if (!schoolId) return;
-    getLearningAreas(schoolId, '').then(d => setAreas(d.areas || [])).catch(() => {});
+    if (filterClass) {
+      getLearningAreasByClass(schoolId, filterClass).then(d => setAreas(d.areas || [])).catch(() => {});
+    } else {
+      setAreas([]);
+    }
   };
 
   // Load sessions

@@ -120,7 +120,14 @@ export async function getRandomAd() {
 
 // CBC Assessments
 export async function getLearningAreas(schoolId, level) {
+  console.log('[DEBUG API] getLearningAreas params:', { school_id: schoolId, level });
   const { data } = await api.get('/api/assessments/areas', { params: { school_id: schoolId, level } });
+  return data;
+}
+
+export async function getLearningAreasByClass(schoolId, classId) {
+  console.log('[DEBUG API] getLearningAreasByClass params:', { school_id: schoolId, class_id: classId });
+  const { data } = await api.get('/api/assessments/areas', { params: { school_id: schoolId, class_id: classId } });
   return data;
 }
 
