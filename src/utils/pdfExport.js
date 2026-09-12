@@ -196,7 +196,7 @@ export async function downloadAcademicPdf(report, childName, phone, term) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
     doc.setTextColor(60, 40, 80);
-    cell(doc, 'Sub-Learning Area', M, y, colSubArea, headerH, { bold: true, size: 7 });
+    cell(doc, 'Sub-strand', M, y, colSubArea, headerH, { bold: true, size: 7 });
     sessions.forEach((sess, i) => {
       const label = sess.exam_name || sess.exam_type || `Session ${i + 1}`;
       cell(doc, label, M + colSubArea + i * sessColW, y, sessColW, headerH, { bold: true, size: 6.5 });
@@ -216,7 +216,7 @@ export async function downloadAcademicPdf(report, childName, phone, term) {
         doc.setFillColor(237, 217, 255);
         doc.rect(M, y, W, headerH, 'F');
         doc.setFont('helvetica', 'bold');
-        cell(doc, 'Sub-Learning Area', M, y, colSubArea, headerH, { bold: true, size: 7 });
+        cell(doc, 'Sub-strand', M, y, colSubArea, headerH, { bold: true, size: 7 });
         sessions.forEach((sess, i) => {
           cell(doc, sess.exam_name || sess.exam_type || '', M + colSubArea + i * sessColW, y, sessColW, headerH, { bold: true, size: 6.5 });
         });
@@ -231,7 +231,7 @@ export async function downloadAcademicPdf(report, childName, phone, term) {
       doc.rect(M, y, W, cellH, 'F');
 
       // Sub-area name cell
-      cell(doc, sa.sub_area_name || '', M, y, colSubArea, cellH, { size: 7.5 });
+      cell(doc, sa.sub_strand_name || '', M, y, colSubArea, cellH, { size: 7.5 });
 
       // Session result cells
       sessions.forEach((sess, i) => {

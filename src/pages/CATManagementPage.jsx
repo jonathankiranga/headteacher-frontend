@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getLearningAreas, getLearningAreasByClass, getExamSessions, createExamSession, updateExamSessionStatus, deleteExamSession, getLearningAreasWithSubAreas, createSubLearningArea, deleteSubLearningArea, getClasses, createLearningArea, updateLearningArea, deleteLearningArea } from '../utils/api.js';
+import { getLearningAreas, getLearningAreasByClass, getExamSessions, createExamSession, updateExamSessionStatus, deleteExamSession, getLearningAreasWithSubAreas, createStrand, updateStrand, deleteStrand, createSubStrand, updateSubStrand, deleteSubStrand, getClasses, createLearningArea, updateLearningArea, deleteLearningArea } from '../utils/api.js';
 import api from '../utils/api.js';
 import HelpPanel, { HelpSection, HelpStep, HelpTip } from '../components/HelpPanel.jsx';
 
@@ -12,7 +12,7 @@ export default function CATManagementPage() {
 
   const [classes, setClasses] = useState([]);
   const [areas, setAreas] = useState([]);
-  const [subAreas, setSubAreas] = useState([]);
+  const [strandTree, setStrandTree] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [filterClass, setFilterClass] = useState('');
   const [filterTerm, setFilterTerm] = useState('');
@@ -23,13 +23,20 @@ export default function CATManagementPage() {
   const [creating, setCreating] = useState(false);
   const [msg, setMsg] = useState('');
 
-  // New sub-area form
-  const [subForm, setSubForm] = useState({ area_id: '', sub_area_name: '', display_order: '' });
-  const [creatingSub, setCreatingSub] = useState(false);
-  // Inline editing state for sub-areas
-  const [editingSubId, setEditingSubId] = useState(null);
-  const [editSubName, setEditSubName] = useState('');
-  const [editSubOrder, setEditSubOrder] = useState('');
+  // New strand form
+  const [strandForm, setStrandForm] = useState({ area_id: '', strand_name: '', term: 'Term 1' });
+  const [creatingStrand, setCreatingStrand] = useState(false);
+
+  // New sub-strand form
+  const [subStrandForm, setSubStrandForm] = useState({ area_id: '', strand_id: '', sub_strand_name: '' });
+  const [creatingSubStrand, setCreatingSubStrand] = useState(false);
+
+  // Inline edit state for strands + sub-strands
+  const [editingStrandId, setEditingStrandId] = useState(null);
+  const [editStrandName, setEditStrandName] = useState('');
+  const [editStrandTerm, setEditStrandTerm] = useState('Term 1');
+  const [editingSubStrandId, setEditingSubStrandId] = useState(null);
+  const [editSubStrandName, setEditSubStrandName] = useState('');
 
   // ── Subjects (learning areas) CRUD ──────────────────────────────
   const [subjectForm, setSubjectForm] = useState({ area_name: '', level_name: '' });
@@ -60,7 +67,7 @@ export default function CATManagementPage() {
     } else {
       setAreas([]);
     }
-    loadSubAreas();
+    loadStrandTree();
   }, [schoolId, filterClass]);
 
   const loadAreas = () => {
@@ -80,12 +87,17 @@ export default function CATManagementPage() {
   };
   useEffect(() => { loadSessions(); }, [schoolId, filterClass, filterTerm, filterYear]);
 
-  const loadSubAreas = () => {
+  // Load the KICD strand tree for the filtered class level
+  const loadStrandTree = () => {
     if (!schoolId) return;
     if (filterClass) {
-      getLearningAreasWithSubAreas(schoolId, filterClass).then(d => setSubAreas(d.sub_areas || [])).catch(() => {});
+      getLearningAreasWithSubAreas(schoolId, filterClass).then(d => {
+        setStrandTree((d.areas || [])
+          .map(a => ({ ...a, strands: (a.strands || []).filter(s => (s.sub_strands || []).length > 0) }))
+          .filter(a => a.strands.length > 0));
+      }).catch(() => {});
     } else {
-      setSubAreas([]);
+      setStrandTree([]);
     }
   };
 
@@ -118,48 +130,100 @@ export default function CATManagementPage() {
     } catch (err) { alert(err.message); }
   };
 
-  const handleCreateSubArea = async (e) => {
+  // ── Strand handlers ────────────────────────────────────────────
+  const handleCreateStrand = async (e) => {
     e.preventDefault();
-    if (!subForm.area_id || !subForm.sub_area_name) return;
-    setCreatingSub(true);
+    if (!strandForm.area_id || !strandForm.strand_name.trim()) return;
+    setCreatingStrand(true);
     try {
-      await createSubLearningArea({
-        area_id: subForm.area_id,
-        sub_area_name: subForm.sub_area_name,
-        display_order: subForm.display_order ? parseInt(subForm.display_order) : 0
+      await createStrand({
+        area_id: strandForm.area_id,
+        strand_name: strandForm.strand_name.trim(),
+        term: strandForm.term,
+        teacher_id: teacherId
       });
-      setSubForm({ area_id: subForm.area_id, sub_area_name: '', display_order: '' });
-      loadSubAreas();
-      setMsg('Sub-learning area added');
-    } catch (err) { setMsg('Failed: ' + err.message); }
-    setCreatingSub(false);
+      setStrandForm({ area_id: strandForm.area_id, strand_name: '', term: strandForm.term });
+      loadStrandTree();
+      setMsg('Strand added');
+    } catch (err) { setMsg('Failed: ' + (err.response?.data?.error || err.message)); }
+    setCreatingStrand(false);
   };
 
-  const handleDeleteSubArea = async (id) => {
-    if (!window.confirm('Delete this sub-learning area? This will also remove any exam results recorded against it.')) return;
+  const startEditStrand = (st) => {
+    setEditingStrandId(st.strand_id);
+    setEditStrandName(st.strand_name);
+    setEditStrandTerm(st.term || 'Term 1');
+  };
+
+  const handleSaveEditStrand = async (id) => {
+    if (!editStrandName.trim()) return;
     try {
-      await deleteSubLearningArea(id);
-      loadSubAreas();
-    } catch (err) { alert(err.message); }
+      await updateStrand(id, { strand_name: editStrandName.trim(), term: editStrandTerm, teacher_id: teacherId });
+      setEditingStrandId(null);
+      loadStrandTree();
+      setMsg('Strand updated');
+    } catch (err) { setMsg('Failed: ' + (err.response?.data?.error || err.message)); }
   };
 
-  const startEditSub = (sa) => {
-    setEditingSubId(sa.sub_area_id);
-    setEditSubName(sa.sub_area_name);
-    setEditSubOrder(sa.display_order ?? '');
-  };
-
-  const handleSaveEditSub = async (id) => {
-    if (!editSubName.trim()) return;
+  const handleDeleteStrand = async (st) => {
+    if (!window.confirm(`Delete strand "${st.strand_name}" and all its sub-strands?`)) return;
     try {
-      await api.put(`/api/exam-sessions/sub-learning-areas/${id}`, {
-        sub_area_name: editSubName.trim(),
-        display_order: editSubOrder !== '' ? parseInt(editSubOrder) : undefined
+      await deleteStrand(st.strand_id, teacherId);
+      loadStrandTree();
+      setMsg(`Strand "${st.strand_name}" deleted`);
+    } catch (err) {
+      const d = err.response?.data;
+      setMsg(d?.message || ('Failed: ' + (d?.error || err.message)));
+    }
+  };
+
+  // ── Sub-strand handlers ────────────────────────────────────────
+  const selectableStrands = strandTree
+    .flatMap(a => (a.strands || []).map(st => ({ ...st, area_id: a.area_id })))
+    .filter(st => !subStrandForm.area_id || String(st.area_id) === String(subStrandForm.area_id));
+
+  const handleCreateSubStrand = async (e) => {
+    e.preventDefault();
+    if (!subStrandForm.strand_id || !subStrandForm.sub_strand_name.trim()) return;
+    setCreatingSubStrand(true);
+    try {
+      await createSubStrand({
+        strand_id: subStrandForm.strand_id,
+        sub_strand_name: subStrandForm.sub_strand_name.trim(),
+        teacher_id: teacherId
       });
-      setEditingSubId(null);
-      loadSubAreas();
-      setMsg('Sub-area updated');
-    } catch (err) { setMsg('Failed: ' + err.message); }
+      setSubStrandForm({ area_id: subStrandForm.area_id, strand_id: '', sub_strand_name: '' });
+      loadStrandTree();
+      setMsg('Sub-strand added');
+    } catch (err) { setMsg('Failed: ' + (err.response?.data?.error || err.message)); }
+    setCreatingSubStrand(false);
+  };
+
+  const startEditSubStrand = (ss) => {
+    setEditingSubStrandId(ss.sub_strand_id);
+    setEditSubStrandName(ss.sub_strand_name);
+  };
+
+  const handleSaveEditSubStrand = async (id) => {
+    if (!editSubStrandName.trim()) return;
+    try {
+      await updateSubStrand(id, { sub_strand_name: editSubStrandName.trim(), teacher_id: teacherId });
+      setEditingSubStrandId(null);
+      loadStrandTree();
+      setMsg('Sub-strand updated');
+    } catch (err) { setMsg('Failed: ' + (err.response?.data?.error || err.message)); }
+  };
+
+  const handleDeleteSubStrand = async (ss) => {
+    if (!window.confirm(`Delete sub-strand "${ss.sub_strand_name}"?`)) return;
+    try {
+      await deleteSubStrand(ss.sub_strand_id, teacherId);
+      loadStrandTree();
+      setMsg(`Sub-strand "${ss.sub_strand_name}" deleted`);
+    } catch (err) {
+      const d = err.response?.data;
+      setMsg(d?.message || ('Failed: ' + (d?.error || err.message)));
+    }
   };
 
   // ── Subjects handlers ────────────────────────────────────────────
@@ -176,6 +240,7 @@ export default function CATManagementPage() {
       });
       setSubjectForm({ area_name: '', level_name: '' });
       loadAreas();
+      loadStrandTree();
       setMsg('Subject added');
     } catch (err) { setMsg('Failed: ' + (err.response?.data?.error || err.message)); }
     setCreatingSubject(false);
@@ -197,6 +262,7 @@ export default function CATManagementPage() {
       });
       setEditingAreaId(null);
       loadAreas();
+      loadStrandTree();
       setMsg('Subject updated');
     } catch (err) { setMsg('Failed: ' + (err.response?.data?.error || err.message)); }
   };
@@ -206,6 +272,7 @@ export default function CATManagementPage() {
     try {
       await deleteLearningArea(area.area_id, teacherId);
       loadAreas();
+      loadStrandTree();
       setMsg(`"${area.area_name}" deleted`);
     } catch (err) {
       const d = err.response?.data;
@@ -259,7 +326,7 @@ export default function CATManagementPage() {
           <h2 className="font-bold text-sm mb-3" style={{ color: '#1a1a6c' }}>Existing Sessions</h2>
           <div className="grid grid-cols-3 gap-2 mb-3">
             <select value={filterClass} onChange={e => setFilterClass(e.target.value)} className="input-field text-sm">
-              <option value="">All Classes</option>
+              <option value="">All Classes (choose Grade for strands)</option>
               {classes.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
             <select value={filterTerm} onChange={e => setFilterTerm(e.target.value)} className="input-field text-sm">
@@ -315,11 +382,10 @@ export default function CATManagementPage() {
         <div className="card p-4">
           <h2 className="font-bold text-sm mb-1" style={{ color: '#1a1a6c' }}>Subjects (Learning Areas)</h2>
           <p className="text-xs mb-3" style={{ color: '#888' }}>
-            Each subject (e.g. English, Mathematics) can be broken into sub-areas for CAT scoring or strands for formative assessment.
+            Each subject (e.g. English, Mathematics) is broken into KICD Strands, then Sub-strands — the same ladder used for lesson plans and CAT scoring.
             Deleting is blocked if the subject has results linked to it.
           </p>
 
-          {/* Add form */}
           <form onSubmit={handleCreateSubject} className="flex gap-2 mb-4 flex-wrap">
             <input
               type="text" value={subjectForm.area_name}
@@ -339,9 +405,8 @@ export default function CATManagementPage() {
             </button>
           </form>
 
-          {/* List */}
           {areas.length === 0 ? (
-            <p className="text-xs" style={{ color: '#bbb' }}>No subjects yet. Add one above.</p>
+            <p className="text-xs" style={{ color: '#bbb' }}>No subjects yet for the selected grade. Add one above.</p>
           ) : (
             <div className="space-y-1">
               {areas.map(area => (
@@ -395,99 +460,141 @@ export default function CATManagementPage() {
           )}
         </div>
 
-        {/* ─── Sub-Learning Areas ─── */}
+        {/* ─── Strands (KICD) ─── */}
         <div className="card p-4">
-          <h2 className="font-bold text-sm mb-1" style={{ color: '#1a1a6c' }}>Sub-Learning Areas</h2>
+          <h2 className="font-bold text-sm mb-1" style={{ color: '#1a1a6c' }}>Strands &amp; Sub-strands (KICD)</h2>
           <p className="text-xs mb-3" style={{ color: '#888' }}>
-            Break each subject into assessable parts (e.g. English → Language, Composition, Reading).
-            Use "Order" to control how sub-areas appear in the score entry table.
+            Learning Area → Strand → Sub-strand. Pick a <strong>Grade</strong> above (or in the session filter) to manage this grade's strands.
+            Strands appear in the CAT score grid and lesson plans.
           </p>
 
-          {/* Add form */}
-          <form onSubmit={handleCreateSubArea} className="flex gap-2 mb-5 flex-wrap">
-            <select value={subForm.area_id} onChange={e => setSubForm({ ...subForm, area_id: e.target.value })}
+          {/* Add strand form */}
+          <form onSubmit={handleCreateStrand} className="flex gap-2 mb-5 flex-wrap">
+            <select value={strandForm.area_id} onChange={e => setStrandForm({ ...strandForm, area_id: e.target.value })}
               className="input-field text-sm" style={{ flex: '1 1 140px', minWidth: 0 }} required>
               <option value="">Select Subject</option>
               {areas.map(a => <option key={a.area_id} value={a.area_id}>{a.area_name}</option>)}
             </select>
-            <input type="text" value={subForm.sub_area_name} onChange={e => setSubForm({ ...subForm, sub_area_name: e.target.value })}
-              className="input-field text-sm" style={{ flex: '2 1 160px', minWidth: 0 }} placeholder="Sub-area name (e.g. Language)" required />
-            <input type="number" min="0" value={subForm.display_order} onChange={e => setSubForm({ ...subForm, display_order: e.target.value })}
-              className="input-field text-sm" style={{ flex: '0 0 72px' }} placeholder="Order" title="Display order (lower = first)" />
-            <button type="submit" disabled={creatingSub}
+            <input type="text" value={strandForm.strand_name} onChange={e => setStrandForm({ ...strandForm, strand_name: e.target.value })}
+              className="input-field text-sm" style={{ flex: '2 1 160px', minWidth: 0 }} placeholder="Strand name (e.g. Reading)" required />
+            <select value={strandForm.term} onChange={e => setStrandForm({ ...strandForm, term: e.target.value })}
+              className="input-field text-sm" style={{ flex: '0 1 110px' }}>
+              <option>Term 1</option><option>Term 2</option><option>Term 3</option>
+            </select>
+            <button type="submit" disabled={creatingStrand}
               className="btn-primary !w-auto px-4 !py-2 !text-sm" style={{ flexShrink: 0 }}>
-              {creatingSub ? '...' : '+ Add'}
+              {creatingStrand ? '...' : '+ Add Strand'}
             </button>
           </form>
 
-          {/* List grouped by area */}
-          {areas.length === 0 ? (
-            <p className="text-xs" style={{ color: '#888' }}>No learning areas configured yet.</p>
-          ) : areas.map(area => {
-            const areaSubs = [...subAreas.filter(sa => sa.area_id === area.area_id)]
-              .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
-            return (
-              <div key={area.area_id} className="mb-4">
-                <h3 className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: '#7B4F9B' }}>
-                  {area.area_name}
-                  <span className="ml-2 font-normal text-gray-400">({areaSubs.length} sub-area{areaSubs.length !== 1 ? 's' : ''})</span>
-                </h3>
-                {areaSubs.length === 0 ? (
-                  <p className="text-xs" style={{ color: '#bbb' }}>No sub-areas yet.</p>
-                ) : (
-                  <div className="space-y-1">
-                    {areaSubs.map(sa => (
-                      <div key={sa.sub_area_id} className="flex items-center gap-2 p-2 rounded-lg"
-                        style={{ border: '1px solid #EEEEEE', backgroundColor: '#FAFAFA' }}>
-                        {editingSubId === sa.sub_area_id ? (
+          {/* Add sub-strand form */}
+          <form onSubmit={handleCreateSubStrand} className="flex gap-2 mb-5 flex-wrap">
+            <select value={subStrandForm.area_id} onChange={e => setSubStrandForm({ area_id: e.target.value, strand_id: '' })}
+              className="input-field text-sm" style={{ flex: '1 1 140px', minWidth: 0 }}>
+              <option value="">All Subjects</option>
+              {areas.map(a => <option key={a.area_id} value={a.area_id}>{a.area_name}</option>)}
+            </select>
+            <select value={subStrandForm.strand_id} onChange={e => setSubStrandForm({ ...subStrandForm, strand_id: e.target.value })}
+              className="input-field text-sm" style={{ flex: '1 1 160px', minWidth: 0 }} required>
+              <option value="">Select Strand</option>
+              {selectableStrands.map(st => <option key={st.strand_id} value={st.strand_id}>{st.strand_name}</option>)}
+            </select>
+            <input type="text" value={subStrandForm.sub_strand_name} onChange={e => setSubStrandForm({ ...subStrandForm, sub_strand_name: e.target.value })}
+              className="input-field text-sm" style={{ flex: '1 1 140px', minWidth: 0 }} placeholder="Sub-strand name" required />
+            <button type="submit" disabled={creatingSubStrand}
+              className="btn-primary !w-auto px-4 !py-2 !text-sm" style={{ flexShrink: 0 }}>
+              {creatingSubStrand ? '...' : '+ Add Sub-strand'}
+            </button>
+          </form>
+
+          {/* Tree grouped by subject → strand → sub-strand */}
+          {strandTree.length === 0 ? (
+            <p className="text-xs" style={{ color: '#888' }}>
+              No strands for the selected grade. Add a strand above, or pick a grade in the session filter.
+            </p>
+          ) : strandTree.map(area => (
+            <div key={area.area_id} className="mb-5">
+              <h3 className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: '#7B4F9B' }}>
+                {area.area_name}
+                <span className="ml-2 font-normal text-gray-400">
+                  ({area.strands.length} strand{area.strands.length !== 1 ? 's' : ''} · {area.strands.reduce((n, s) => n + (s.sub_strands || []).length, 0)} sub-strand{area.strands.reduce((n, s) => n + (s.sub_strands || []).length, 0) !== 1 ? 's' : ''})
+                </span>
+              </h3>
+              {area.strands.length === 0 ? (
+                <p className="text-xs" style={{ color: '#bbb' }}>No strands yet for this subject.</p>
+              ) : (
+                <div className="space-y-2">
+                  {area.strands.map(st => (
+                    <div key={st.strand_id} style={{ border: '1px solid #EEEEEE', backgroundColor: '#FAFAFA', borderRadius: 8, padding: 8 }}>
+                      <div className="flex items-center gap-2">
+                        {editingStrandId === st.strand_id ? (
                           <>
-                            <input
-                              type="text" value={editSubName} onChange={e => setEditSubName(e.target.value)}
-                              className="input-field text-sm" style={{ flex: 1, padding: '4px 8px' }}
-                              autoFocus onKeyDown={e => { if (e.key === 'Enter') handleSaveEditSub(sa.sub_area_id); if (e.key === 'Escape') setEditingSubId(null); }}
-                            />
-                            <input
-                              type="number" min="0" value={editSubOrder} onChange={e => setEditSubOrder(e.target.value)}
-                              className="input-field text-sm" style={{ width: 64, padding: '4px 6px' }} placeholder="Order"
-                            />
-                            <button onClick={() => handleSaveEditSub(sa.sub_area_id)}
-                              style={{ padding: '4px 10px', borderRadius: 6, border: 'none', backgroundColor: '#7B4F9B', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                              Save
-                            </button>
-                            <button onClick={() => setEditingSubId(null)}
-                              style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #DDD', backgroundColor: '#fff', color: '#666', fontSize: 12, cursor: 'pointer' }}>
-                              Cancel
-                            </button>
+                            <input type="text" value={editStrandName} onChange={e => setEditStrandName(e.target.value)}
+                              className="input-field text-sm" style={{ flex: 1, padding: '4px 8px', fontWeight: 600 }}
+                              autoFocus onKeyDown={e => { if (e.key === 'Enter') handleSaveEditStrand(st.strand_id); if (e.key === 'Escape') setEditingStrandId(null); }} />
+                            <select value={editStrandTerm} onChange={e => setEditStrandTerm(e.target.value)} className="input-field text-sm" style={{ width: 110, padding: '4px 6px' }}>
+                              <option>Term 1</option><option>Term 2</option><option>Term 3</option>
+                            </select>
+                            <button onClick={() => handleSaveEditStrand(st.strand_id)}
+                              style={{ padding: '4px 10px', borderRadius: 6, border: 'none', backgroundColor: '#7B4F9B', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Save</button>
+                            <button onClick={() => setEditingStrandId(null)}
+                              style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #DDD', backgroundColor: '#fff', color: '#666', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
                           </>
                         ) : (
                           <>
-                            <span style={{ fontSize: 12, color: '#444', flex: 1 }}>{sa.sub_area_name}</span>
-                            {sa.display_order != null && (
-                              <span style={{ fontSize: 10, color: '#BBB', minWidth: 40 }}>#{sa.display_order}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#333', flex: 1 }}>{st.strand_name}</span>
+                            {st.term && (
+                              <span style={{ fontSize: 10, color: '#7B4F9B', backgroundColor: '#F3E7FA', padding: '2px 8px', borderRadius: 10 }}>{st.term}</span>
                             )}
-                            <button onClick={() => startEditSub(sa)}
-                              style={{ padding: '3px 10px', borderRadius: 6, border: '1px solid #DDD', backgroundColor: '#fff', color: '#555', fontSize: 11, cursor: 'pointer' }}>
-                              Edit
-                            </button>
-                            <button onClick={() => handleDeleteSubArea(sa.sub_area_id)}
-                              style={{ padding: '3px 10px', borderRadius: 6, border: '1px solid #FFCDD2', backgroundColor: '#FFF5F5', color: '#C62828', fontSize: 11, cursor: 'pointer' }}>
-                              Delete
-                            </button>
+                            <button onClick={() => startEditStrand(st)}
+                              style={{ padding: '3px 10px', borderRadius: 6, border: '1px solid #DDD', backgroundColor: '#fff', color: '#555', fontSize: 11, cursor: 'pointer' }}>Edit</button>
+                            <button onClick={() => handleDeleteStrand(st)}
+                              style={{ padding: '3px 10px', borderRadius: 6, border: '1px solid #FFCDD2', backgroundColor: '#FFF5F5', color: '#C62828', fontSize: 11, cursor: 'pointer' }}>Delete</button>
                           </>
                         )}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                      {(st.sub_strands || []).length === 0 ? (
+                        <p className="text-xs mt-2" style={{ color: '#bbb' }}>No sub-strands yet.</p>
+                      ) : (
+                        <div className="mt-2 space-y-1">
+                          {st.sub_strands.map(ss => (
+                            <div key={ss.sub_strand_id} className="flex items-center gap-2 pl-3 py-1"
+                              style={{ borderLeft: '2px solid #E9D8F5' }}>
+                              {editingSubStrandId === ss.sub_strand_id ? (
+                                <>
+                                  <input type="text" value={editSubStrandName} onChange={e => setEditSubStrandName(e.target.value)}
+                                    className="input-field text-sm" style={{ flex: 1, padding: '3px 8px' }}
+                                    autoFocus onKeyDown={e => { if (e.key === 'Enter') handleSaveEditSubStrand(ss.sub_strand_id); if (e.key === 'Escape') setEditingSubStrandId(null); }} />
+                                  <button onClick={() => handleSaveEditSubStrand(ss.sub_strand_id)}
+                                    style={{ padding: '3px 10px', borderRadius: 6, border: 'none', backgroundColor: '#7B4F9B', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Save</button>
+                                  <button onClick={() => setEditingSubStrandId(null)}
+                                    style={{ padding: '3px 10px', borderRadius: 6, border: '1px solid #DDD', backgroundColor: '#fff', color: '#666', fontSize: 11, cursor: 'pointer' }}>Cancel</button>
+                                </>
+                              ) : (
+                                <>
+                                  <span style={{ fontSize: 12, color: '#444', flex: 1 }}>{ss.sub_strand_name}</span>
+                                  <button onClick={() => startEditSubStrand(ss)}
+                                    style={{ padding: '2px 9px', borderRadius: 6, border: '1px solid #DDD', backgroundColor: '#fff', color: '#555', fontSize: 11, cursor: 'pointer' }}>Edit</button>
+                                  <button onClick={() => handleDeleteSubStrand(ss)}
+                                    style={{ padding: '2px 9px', borderRadius: 6, border: '1px solid #FFCDD2', backgroundColor: '#FFF5F5', color: '#C62828', fontSize: 11, cursor: 'pointer' }}>Delete</button>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
 
         {msg && (
           <div className="text-sm text-center py-2 rounded-lg" style={{
-            backgroundColor: msg.includes('Failed') ? '#FFEBEE' : '#E8F5E9',
-            color: msg.includes('Failed') ? '#C62828' : '#2E7D32'
+            backgroundColor: msg.includes('Failed') || msg.includes('Cannot') ? '#FFEBEE' : '#E8F5E9',
+            color: msg.includes('Failed') || msg.includes('Cannot') ? '#C62828' : '#2E7D32'
           }}>{msg}</div>
         )}
       </div>
@@ -497,7 +604,7 @@ export default function CATManagementPage() {
           This is the headteacher's control centre for assessments. Before teachers can
           enter CAT scores, this screen must be set up. It has three sections:
           <strong> Sessions</strong>, <strong>Subjects</strong>, and
-          <strong> Sub-Learning Areas</strong>.
+          <strong> Strands (KICD)</strong>.
         </HelpSection>
         <HelpSection icon="📅" title="Sessions">
           A session is one instance of an assessment (e.g. "CAT 1 Term 1 2026" for
@@ -508,16 +615,18 @@ export default function CATManagementPage() {
           <HelpStep n={4}>Toggle it to <strong>Open</strong> when teachers should start entering scores. Set it to <strong>Closed</strong> when done — this locks results and triggers parent notifications.</HelpStep>
         </HelpSection>
         <HelpSection icon="📚" title="Subjects (Learning Areas)">
-          Subjects are the top-level learning areas (e.g. English, Mathematics, Science).
-          Add all subjects taught at your school here. You can optionally tag each subject
-          with a grade level if it is only taught at a specific level.
+          Subjects are the top-level learning areas (e.g. English, Mathematics, Science
+          and Technology). Add all subjects taught at your school here. You can
+          optionally tag each subject with a grade level.
         </HelpSection>
-        <HelpSection icon="🔬" title="Sub-Learning Areas">
-          Each subject is divided into assessable parts (e.g. English → Language,
-          Composition, Reading). These sub-areas appear as columns in the CAT score entry
-          grid. Use <strong>Order</strong> to control the column sequence.
+        <HelpSection icon="🧬" title="Strands & Sub-strands (KICD)">
+          Following the KICD curriculum, each subject is divided into
+          <strong> Strands</strong> (e.g. English → Reading) and each strand into
+          <strong> Sub-strands</strong> (e.g. Reading → Comprehension). These appear as
+          the score columns in the CAT grid and as the drill-down in lesson plans.
+          Pick a grade in the session filter to manage that grade's strands.
         </HelpSection>
-        <HelpTip>Set up Subjects and Sub-Learning Areas once at the start of the year. Sessions are created each term per class.</HelpTip>
+        <HelpTip>Strands are seeded automatically from the KICD catalog when a school is set up. You can add, rename, or delete strands here anytime.</HelpTip>
       </HelpPanel>
     </div>
   );

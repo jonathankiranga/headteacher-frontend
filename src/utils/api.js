@@ -299,21 +299,42 @@ export async function deleteExamSession(id) {
   return data;
 }
 
-export async function getLearningAreasWithSubAreas(schoolId, classId) {
+export async function getLearningAreasWithSubAreas(schoolId, classId, term) {
   const params = { school_id: schoolId };
   if (classId) params.class_id = classId;
+  if (term) params.term = term;
   console.log('[DEBUG API] getLearningAreasWithSubAreas params:', params);
-  const { data } = await api.get('/api/exam-sessions/sub-learning-areas', { params });
+  const { data } = await api.get('/api/exam-sessions/strand-tree', { params });
   return data;
 }
 
-export async function createSubLearningArea(body) {
-  const { data } = await api.post('/api/exam-sessions/sub-learning-areas', body);
+export async function createStrand(body) {
+  const { data } = await api.post('/api/assessments/strands', body);
   return data;
 }
 
-export async function deleteSubLearningArea(id) {
-  const { data } = await api.delete(`/api/exam-sessions/sub-learning-areas/${id}`);
+export async function updateStrand(id, body) {
+  const { data } = await api.put(`/api/assessments/strands/${id}`, body);
+  return data;
+}
+
+export async function deleteStrand(id, teacherId) {
+  const { data } = await api.delete(`/api/assessments/strands/${id}`, { params: { teacher_id: teacherId } });
+  return data;
+}
+
+export async function createSubStrand(body) {
+  const { data } = await api.post('/api/assessments/sub-strands', body);
+  return data;
+}
+
+export async function updateSubStrand(id, body) {
+  const { data } = await api.put(`/api/assessments/sub-strands/${id}`, body);
+  return data;
+}
+
+export async function deleteSubStrand(id, teacherId) {
+  const { data } = await api.delete(`/api/assessments/sub-strands/${id}`, { params: { teacher_id: teacherId } });
   return data;
 }
 
