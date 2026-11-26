@@ -6,6 +6,7 @@ import TermsAcceptance from '../components/TermsAcceptance.jsx';
 export default function TeacherLogin() {
   const [step, setStep] = useState('credential'); // credential → otp → terms
   const [credential, setCredential] = useState(''); // phone or email, user enters any
+  const [role, setRole] = useState('head');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sessionId, setSessionId] = useState('');
@@ -20,7 +21,7 @@ export default function TeacherLogin() {
       const data = await requestTeacherOtp(
         isEmail ? undefined : credential,
         isEmail ? credential : undefined,
-        'head'
+        role
       );
       setSessionId(data.session_id);
       setStep('otp');
@@ -43,14 +44,14 @@ export default function TeacherLogin() {
     setLoading(true);
     setError('');
     try {
-      const data = await verifyTeacherOtp(sessionId, code, 'head');
+      const data = await verifyTeacherOtp(sessionId, code, role);
       sessionStorage.setItem('session_id', data.session_id);
       sessionStorage.setItem('teacher_id', data.teacher_id);
       sessionStorage.setItem('school_id', data.school_id);
       sessionStorage.setItem('role', data.role || 'teacher');
 
       // Headteachers must accept the Terms & Conditions before they can proceed.
-      if (data.terms?.required && data.terms.accepted === false) {
+      if (role === 'head' && data.terms?.required && data.terms.accepted === false) {
         setTermsMeta({ version: data.terms.version, accepted_at: data.terms.accepted_at });
         setStep('terms');
         setLoading(false);
@@ -123,6 +124,17 @@ export default function TeacherLogin() {
           <div className="bg-white rounded-card p-6 shadow-xl">
             {step === 'credential' && (
               <form onSubmit={handleRequestOtp}>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: '#555' }}>
+                  Sign in as
+                </label>
+                <select
+                  value={role}
+                  onChange={e => setRole(e.target.value)}
+                  className="input-field mb-4"
+                >
+                  <option value="head">School Head — Mr Gerald</option>
+                  <option value="school_admin">School Administrator</option>
+                </select>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: '#555' }}>
                   Phone or Email
                 </label>
