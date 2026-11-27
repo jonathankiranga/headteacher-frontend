@@ -43,8 +43,8 @@ api.interceptors.response.use(undefined, async (error) => {
 });
 
 // Auth (principle portal: head door only)
-export async function requestTeacherOtp(phone, email, role = 'head') {
-  const { data } = await api.post('/api/teachers/request-otp', { phone, email, role });
+export async function requestTeacherOtp(phone, email, role = 'head', school_id) {
+  const { data } = await api.post('/api/teachers/request-otp', { phone, email, role, school_id });
   return data;
 }
 
