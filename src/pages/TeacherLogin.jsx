@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import OTPInput from '../components/OTPInput.jsx';
-import { requestTeacherOtp, verifyTeacherOtp } from '../utils/api.js';
+import { requestTeacherOtp, verifyTeacherOtp, searchSchools } from '../utils/api.js';
 import TermsAcceptance from '../components/TermsAcceptance.jsx';
 
 export default function TeacherLogin() {
   const [step, setStep] = useState('credential'); // credential → otp → terms
   const [credential, setCredential] = useState(''); // phone or email, user enters any
+  const [schoolQuery, setSchoolQuery] = useState('');
+  const [schoolResults, setSchoolResults] = useState([]);
+  const [schoolId, setSchoolId] = useState('');
+  const [schoolSearching, setSchoolSearching] = useState(false);
   const [role, setRole] = useState('head');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -14,6 +18,7 @@ export default function TeacherLogin() {
 
   async function handleRequestOtp(e) {
     e.preventDefault();
+    if (!schoolId) { setError('Select your school before continuing.'); return; }
     setLoading(true);
     setError('');
     try {
@@ -21,7 +26,8 @@ export default function TeacherLogin() {
       const data = await requestTeacherOtp(
         isEmail ? undefined : credential,
         isEmail ? credential : undefined,
-        role
+        role,
+        schoolId
       );
       setSessionId(data.session_id);
       setStep('otp');
@@ -125,6 +131,46 @@ export default function TeacherLogin() {
             {step === 'credential' && (
               <form onSubmit={handleRequestOtp}>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: '#555' }}>
+                  School
+                </label>
+                <input
+                  type="search"
+                  placeholder="Type your school name"
+                  value={schoolQuery}
+                  onChange={async e => {
+                    const value = e.target.value;
+                    setSchoolQuery(value);
+                    setSchoolId('');
+                    if (value.trim().length < 2) { setSchoolResults([]); return; }
+                    setSchoolSearching(true);
+                    try {
+                      const result = await searchSchools(value.trim());
+                      setSchoolResults(result.schools || []);
+                    } catch { setSchoolResults([]); }
+                    finally { setSchoolSearching(false); }
+                  }}
+                  className="input-field mb-2"
+                  autoComplete="organization"
+                  required
+                />
+                {schoolResults.length > 0 && (
+                  <select
+                    value={schoolId}
+                    onChange={e => {
+                      const selected = schoolResults.find(s => s.school_id === e.target.value);
+                      setSchoolId(e.target.value);
+                      if (selected) setSchoolQuery(selected.school_name);
+                    }}
+                    className="input-field mb-4"
+                    required
+                  >
+                    <option value="">Select matching school</option>
+                    {schoolResults.map(s => <option key={s.school_id} value={s.school_id}>{s.school_name}{s.region ? ` — ${s.region}` : ''}</option>)}
+                  </select>
+                )}
+                {schoolSearching && <p className="text-xs mb-3" style={{ color: '#888' }}>Searching schools…</p>}
+                {schoolId && <p className="text-xs mb-3" style={{ color: '#2E7D32' }}>School selected</p>}
+                <label className="block text-sm font-medium mb-1.5" style={{ color: '#555' }}>
                   Sign in as
                 </label>
                 <select
@@ -152,7 +198,7 @@ export default function TeacherLogin() {
                   {loading ? 'Sending OTP...' : 'Continue'}
                 </button>
                 <p className="text-xs text-center mt-3" style={{ color: '#aaa' }}>
-                  Your school is linked to your account automatically
+                  Your staff access is verified against the school you selected
                 </p>
               </form>
             )}
